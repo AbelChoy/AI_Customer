@@ -1,0 +1,2316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boldr Customer Intelligence Engine — Live Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #080c18;
+      --bg-card:     #0f1628;
+      --bg-elev:     #162038;
+      --bg-input:    #1a2540;
+      --gold:        #c9a84c;
+      --gold-bright: #e8c46a;
+      --gold-dim:    rgba(201,168,76,0.12);
+      --gold-border: rgba(201,168,76,0.30);
+      --border:      rgba(255,255,255,0.06);
+      --border-mid:  rgba(255,255,255,0.12);
+      --text:        #dce6f8;
+      --text-dim:    #7d8fa8;
+      --text-muted:  #3d4f68;
+      --green:       #27ae60;
+      --green-bg:    rgba(39,174,96,0.10);
+      --green-bd:    rgba(39,174,96,0.30);
+      --orange:      #e67e22;
+      --orange-bg:   rgba(230,126,34,0.10);
+      --orange-bd:   rgba(230,126,34,0.30);
+      --red:         #e74c3c;
+      --red-bg:      rgba(231,76,60,0.10);
+      --blue:        #3498db;
+      --blue-bg:     rgba(52,152,219,0.10);
+      --blue-bd:     rgba(52,152,219,0.30);
+      --purple:      #9b59b6;
+      --purple-bg:   rgba(155,89,182,0.10);
+      --purple-bd:   rgba(155,89,182,0.30);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      background: linear-gradient(160deg, #0d1530 0%, #080c18 60%);
+      border-bottom: 1px solid var(--gold-border);
+      padding: 52px 40px 44px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 70%);
+    }
+    .hero-inner { position: relative; max-width: 900px; margin: 0 auto; }
+    .brand-wordmark {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .brand-wordmark span { color: var(--text-dim); font-weight: 400; letter-spacing: 1px; font-size: 10px; }
+    .hero h1 {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+    .hero h1 em { color: var(--gold); font-style: normal; }
+    .hero-sub {
+      font-size: 15px;
+      color: var(--text-dim);
+      margin-bottom: 40px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .stat-pill {
+      background: var(--bg-elev);
+      border: 1px solid var(--gold-border);
+      border-radius: 50px;
+      padding: 10px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 110px;
+    }
+    .stat-n {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--gold-bright);
+      line-height: 1;
+    }
+    .stat-l {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    /* ─── SCENARIO TABS ─── */
+    .tabs-wrapper {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .tabs {
+      display: flex;
+      max-width: 1080px;
+      margin: 0 auto;
+      gap: 2px;
+      padding: 0 20px;
+    }
+    .tab {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 16px 22px;
+      font-size: 13px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--text); border-bottom-color: var(--gold); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .badge.green  { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-bd); }
+    .badge.orange { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-bd); }
+    .badge.purple { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-bd); }
+    .badge.blue   { background: var(--blue-bg);   color: var(--blue);   border: 1px solid var(--blue-bd); }
+    .badge.gold   { background: var(--gold-dim);   color: var(--gold);   border: 1px solid var(--gold-border); }
+
+    /* ─── MAIN CONTENT ─── */
+    .main { max-width: 1080px; margin: 0 auto; padding: 32px 20px 60px; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ─── SCENARIO HEADER ─── */
+    .scenario-hdr {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .scenario-hdr h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+    .scenario-hdr p  { color: var(--text-dim); font-size: 13px; max-width: 560px; }
+    .outcome-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      border: 1px solid;
+      align-self: flex-start;
+    }
+    .outcome-tag.green  { background: var(--green-bg);  color: var(--green);  border-color: var(--green-bd); }
+    .outcome-tag.orange { background: var(--orange-bg); color: var(--orange); border-color: var(--orange-bd); }
+    .outcome-tag.purple { background: var(--purple-bg); color: var(--purple); border-color: var(--purple-bd); }
+    .outcome-tag.blue   { background: var(--blue-bg);   color: var(--blue);   border-color: var(--blue-bd); }
+
+    /* ─── PIPELINE TRACK ─── */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 28px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .pip-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 90px;
+      cursor: pointer;
+    }
+    .pip-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: all 0.3s;
+      position: relative;
+    }
+    .pip-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 80px;
+      line-height: 1.3;
+      transition: color 0.3s;
+    }
+    .pip-step.done  .pip-dot   { border-color: var(--gold); background: var(--gold); color: #000; }
+    .pip-step.done  .pip-label { color: var(--gold); }
+    .pip-step.active .pip-dot  {
+      border-color: var(--gold);
+      background: var(--bg);
+      color: var(--gold);
+      box-shadow: 0 0 0 4px rgba(201,168,76,0.15);
+    }
+    .pip-step.active .pip-label { color: var(--gold-bright); font-weight: 600; }
+    .pip-connector {
+      height: 2px;
+      flex: 1;
+      min-width: 24px;
+      background: var(--text-muted);
+      opacity: 0.3;
+      margin-top: -20px;
+      transition: all 0.3s;
+    }
+    .pip-connector.done { background: var(--gold); opacity: 0.6; }
+
+    /* ─── STEP CONTENT ─── */
+    .step-content {
+      min-height: 340px;
+      animation: fadeUp 0.3s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .step-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      background: var(--bg-elev);
+      border: 1px solid var(--border-mid);
+      color: var(--text);
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { border-color: var(--gold); color: var(--gold); }
+    .btn:disabled { opacity: 0.3; cursor: default; }
+    .btn:disabled:hover { border-color: var(--border-mid); color: var(--text); }
+    .btn-next {
+      background: var(--gold-dim);
+      border-color: var(--gold-border);
+      color: var(--gold-bright);
+    }
+    .btn-next:hover { background: var(--gold); color: #000; border-color: var(--gold); }
+    .step-counter { font-size: 12px; color: var(--text-muted); }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .card-top-bar {
+      height: 3px;
+    }
+    .card-top-bar.gold   { background: linear-gradient(90deg, var(--gold), var(--gold-bright)); }
+    .card-top-bar.green  { background: var(--green); }
+    .card-top-bar.orange { background: var(--orange); }
+    .card-top-bar.purple { background: var(--purple); }
+    .card-top-bar.blue   { background: var(--blue); }
+    .card-top-bar.red    { background: var(--red); }
+
+    .card-body { padding: 20px 24px; }
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+    }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+    /* ─── EMAIL CARD ─── */
+    .email-hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      gap: 12px;
+    }
+    .email-sender { display: flex; align-items: center; gap: 12px; }
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      color: white;
+      flex-shrink: 0;
+    }
+    .sender-name { font-weight: 600; font-size: 14px; }
+    .sender-email { font-size: 11px; color: var(--text-dim); }
+    .email-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .channel-pill {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .email-subject {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    .email-body {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.7;
+      padding: 14px 16px;
+      background: var(--bg-elev);
+      border-radius: 8px;
+      border-left: 3px solid var(--border-mid);
+      font-style: italic;
+    }
+    .email-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .info-box {
+      margin-top: 16px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text-dim);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .info-box strong { color: var(--text); }
+
+    /* ─── WARNING BADGE ─── */
+    .warn-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--orange-bg);
+      border: 1px solid var(--orange-bd);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--orange);
+      font-weight: 600;
+      margin-top: 14px;
+    }
+
+    /* ─── KB CHUNKS ─── */
+    .tier-block { margin-bottom: 14px; }
+    .tier-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .tier-label.t1 { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-border); }
+    .tier-label.t2 { background: var(--blue-bg);  color: var(--blue);  border: 1px solid var(--blue-bd); }
+    .tier-label.t3 { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-bd); }
+
+    .chunk-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chunk-pill {
+      background: var(--bg-input);
+      border: 1px solid var(--border-mid);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-family: 'SF Mono', monospace;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chunk-pill .cid { color: var(--text); font-weight: 600; }
+    .kb-stat-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* ─── JSON VIEWER ─── */
+    .json-viewer {
+      background: #0a0e1a;
+      border: 1px solid var(--border-mid);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      overflow-x: auto;
+    }
+    .j-key    { color: var(--gold); }
+    .j-str    { color: #98c379; }
+    .j-num    { color: #d19a66; }
+    .j-bool   { color: #56b6c2; }
+    .j-null   { color: #e06c75; }
+    .j-arr    { color: var(--text-dim); }
+    .j-hl {
+      background: rgba(201,168,76,0.1);
+      border-left: 2px solid var(--gold);
+      padding-left: 6px;
+      margin-left: -8px;
+      display: block;
+    }
+
+    /* ─── ROUTE DIAGRAM ─── */
+    .route-branches {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .route-branch {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .route-branch.selected {
+      border-color: var(--green-bd);
+      background: var(--green-bg);
+    }
+    .route-branch.rejected {
+      opacity: 0.4;
+    }
+    .route-arrow { color: var(--text-muted); font-size: 18px; }
+    .route-icon { font-size: 18px; }
+
+    /* ─── DRAFT REPLY CARD ─── */
+    .draft-email {
+      background: var(--bg-elev);
+      border: 1px solid var(--border-mid);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .draft-toolbar {
+      background: #1e2a40;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .draft-badge {
+      background: var(--orange-bg);
+      color: var(--orange);
+      border: 1px solid var(--orange-bd);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .draft-body { padding: 16px; font-size: 13px; line-height: 1.8; color: var(--text-dim); }
+    .draft-body strong { color: var(--text); }
+
+    /* ─── SLACK CARD ─── */
+    .slack-card {
+      background: #1a1d21;
+      border: 1px solid #2d3136;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .slack-sidebar { padding: 12px 16px; border-bottom: 1px solid #2d3136; }
+    .slack-channel { font-size: 13px; font-weight: 600; color: #d1d2d3; }
+    .slack-channel span { color: #9b9ea4; font-weight: 400; }
+    .slack-msg { padding: 14px 16px; display: flex; gap: 12px; }
+    .slack-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .slack-msg-inner { flex: 1; }
+    .slack-name { font-size: 13px; font-weight: 700; color: #d1d2d3; margin-bottom: 4px; }
+    .slack-name span { font-size: 10px; font-weight: 400; color: #6b6f76; margin-left: 6px; }
+    .slack-text { font-size: 13px; color: #b9bbbe; line-height: 1.6; }
+    .slack-text strong { color: #d1d2d3; }
+    .slack-action-btn {
+      display: inline-block;
+      margin-top: 10px;
+      background: #1164a3;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 5px;
+    }
+
+    /* ─── SUPABASE ROW ─── */
+    .db-table { border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .db-thead {
+      background: var(--bg-input);
+      display: grid;
+      border-bottom: 1px solid var(--border-mid);
+    }
+    .db-row { display: grid; border-bottom: 1px solid var(--border); }
+    .db-row.highlight { background: var(--gold-dim); }
+    .db-row:last-child { border-bottom: none; }
+    .db-cell {
+      padding: 8px 12px;
+      font-size: 11px;
+      font-family: 'SF Mono', monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .db-thead .db-cell { color: var(--text-dim); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ─── WEBHOOK CARD ─── */
+    .webhook-card {
+      background: var(--bg-elev);
+      border: 1px solid var(--border-mid);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .webhook-hdr {
+      background: var(--bg-input);
+      padding: 8px 14px;
+      font-size: 11px;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .method-badge {
+      background: var(--green-bg);
+      color: var(--green);
+      border: 1px solid var(--green-bd);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .webhook-body { padding: 14px; }
+
+    /* ─── KB ENTRY CARD ─── */
+    .kb-entry {
+      background: var(--bg-elev);
+      border: 1px solid var(--border-mid);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .kb-entry-id {
+      font-family: 'SF Mono', monospace;
+      font-size: 11px;
+      color: var(--gold);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .kb-q { font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .kb-a { color: var(--text-dim); line-height: 1.7; }
+
+    /* ─── SUCCESS CALLOUT ─── */
+    .callout {
+      padding: 16px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      border: 1px solid;
+    }
+    .callout.green  { background: var(--green-bg);  border-color: var(--green-bd);  color: var(--green); }
+    .callout.orange { background: var(--orange-bg); border-color: var(--orange-bd); color: var(--orange); }
+    .callout.purple { background: var(--purple-bg); border-color: var(--purple-bd); color: var(--purple); }
+    .callout.blue   { background: var(--blue-bg);   border-color: var(--blue-bd);   color: var(--blue); }
+    .callout.gold   { background: var(--gold-dim);  border-color: var(--gold-border); color: var(--gold-bright); }
+    .callout-icon { font-size: 20px; flex-shrink: 0; }
+    .callout-text { flex: 1; }
+    .callout-text strong { display: block; font-size: 14px; margin-bottom: 4px; }
+    .callout-text p { opacity: 0.85; line-height: 1.6; }
+
+    /* ─── PHASE DIVIDER ─── */
+    .phase-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    .phase-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .phase-phase { font-weight: 700; color: var(--text); }
+    .phase-sub { color: var(--text-dim); }
+    .time-skip {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ─── ANALYTICS ─── */
+    .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .analytics-full { margin-bottom: 20px; }
+
+    .metric-row { display: flex; gap: 14px; margin-bottom: 20px; }
+    .metric-card {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .metric-n { font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .metric-l { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; }
+    .bar-label { font-size: 12px; color: var(--text-dim); min-width: 140px; text-align: right; }
+    .bar-track { flex: 1; background: var(--bg-input); border-radius: 4px; height: 20px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; color: white; transition: width 1s ease; }
+    .bar-num { font-size: 12px; color: var(--text-dim); min-width: 30px; }
+
+    .persona-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px; }
+    .persona-card {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+    }
+    .persona-name { font-weight: 600; margin-bottom: 4px; }
+    .persona-count { color: var(--text-dim); font-size: 11px; }
+    .persona-bar {
+      height: 3px;
+      border-radius: 3px;
+      margin-top: 8px;
+    }
+
+    .weekly-digest {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .digest-hdr {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .digest-title { font-weight: 600; font-size: 14px; }
+    .digest-week  { font-size: 11px; color: var(--text-dim); }
+    .digest-body { padding: 16px 20px; }
+    .theme-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .theme-row:last-child { border-bottom: none; }
+    .theme-name { display: flex; align-items: center; gap: 8px; }
+    .theme-count { color: var(--text-dim); font-size: 12px; }
+    .theme-action { font-size: 11px; color: var(--text-muted); max-width: 280px; text-align: right; }
+    .signal-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    .brief-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .brief-hdr {
+      background: linear-gradient(90deg, var(--bg-elev), var(--bg-card));
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--gold-border);
+    }
+    .brief-hdr-top { font-size: 11px; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+    .brief-title { font-size: 16px; font-weight: 700; }
+    .brief-body { padding: 20px 22px; }
+    .insight-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .insight-item:last-child { border-bottom: none; }
+    .insight-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+      color: var(--gold);
+      font-weight: 700;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .insight-body { flex: 1; }
+    .insight-head { font-weight: 600; margin-bottom: 4px; }
+    .insight-sub  { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+    .insight-persona-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 6px;
+      background: var(--blue-bg);
+      color: var(--blue);
+      border: 1px solid var(--blue-bd);
+    }
+
+    .rec-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .rec-icon { font-size: 16px; flex-shrink: 0; }
+    .rec-body { flex: 1; color: var(--text-dim); }
+    .rec-body strong { color: var(--text); display: block; margin-bottom: 2px; }
+
+    /* ─── FOOTER ─── */
+    .footer {
+      text-align: center;
+      padding: 32px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .footer strong { color: var(--text-dim); }
+
+    /* ─── MISC ─── */
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+    .mt8  { margin-top: 8px; }
+    .mt12 { margin-top: 12px; }
+    .mt16 { margin-top: 16px; }
+    .gap14 { display: flex; flex-direction: column; gap: 14px; }
+    .text-muted { color: var(--text-muted); font-size: 12px; }
+    .text-dim { color: var(--text-dim); }
+    .text-green  { color: var(--green); }
+    .text-orange { color: var(--orange); }
+    .text-gold   { color: var(--gold); }
+    .text-blue   { color: var(--blue); }
+    .text-purple { color: var(--purple); }
+    .fw6 { font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="brand-wordmark">
+      BOLDR SUPPLY CO.
+      <span>× AI Workflow Automation</span>
+    </div>
+    <h1>Customer <em>Intelligence</em> Engine</h1>
+    <p class="hero-sub">Self-hosted n8n · Claude API · Supabase · Gmail · Slack — processing every customer email in under 10 seconds</p>
+    <div class="stats-row">
+      <div class="stat-pill">
+        <span class="stat-n" id="stat-tickets">0</span>
+        <span class="stat-l">Tickets Processed</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-n text-green">71%</span>
+        <span class="stat-l">Auto-Answered</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-n" id="stat-kb">0</span>
+        <span class="stat-l">KB Chunks</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-n text-gold">&lt;10s</span>
+        <span class="stat-l">Avg Response</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-n text-purple">4</span>
+        <span class="stat-l">Live Workflows</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs-wrapper">
+  <nav class="tabs">
+    <button class="tab active" onclick="showTab('a')">
+      <span class="badge green">A</span> BPA Safety
+    </button>
+    <button class="tab" onclick="showTab('b')">
+      <span class="badge orange">B</span> False Gap Caught
+    </button>
+    <button class="tab" onclick="showTab('c')">
+      <span class="badge purple">C</span> Self-Improving Loop
+    </button>
+    <button class="tab" onclick="showTab('d')">
+      <span class="badge blue">D</span> Order Escalation
+    </button>
+    <button class="tab" onclick="showTab('analytics')">
+      <span class="badge gold">★</span> Analytics
+    </button>
+  </nav>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ═══ PANEL A ═══ -->
+  <div id="panel-a" class="panel active">
+    <div class="scenario-hdr">
+      <div>
+        <h2>Scenario A — Health-Conscious Buyer</h2>
+        <p>Vikram Allen asks if the watch strap is BPA-free, buying for his young daughter. The system classifies, finds the answer in the knowledge base, and drafts a reply — all in under 10 seconds, no human needed.</p>
+      </div>
+      <div class="outcome-tag green">✓ Draft reply created</div>
+    </div>
+    <div class="pipeline" id="pip-a"></div>
+    <div class="step-content" id="content-a"></div>
+    <div class="step-nav">
+      <button class="btn" id="prev-a" onclick="prevStep('a')">← Previous</button>
+      <span class="step-counter" id="ctr-a"></span>
+      <button class="btn btn-next" id="next-a" onclick="nextStep('a')">Next Step →</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL B ═══ -->
+  <div id="panel-b" class="panel">
+    <div class="scenario-hdr">
+      <div>
+        <h2>Scenario B — The AI Corrects a Human Mistake</h2>
+        <p>Mila Yeo's Arabic engraving question was flagged as a <em>knowledge gap</em> by a human CS agent. The AI finds the answer that the human missed — directly in the engraving rate card.</p>
+      </div>
+      <div class="outcome-tag orange">★ AI outperforms manual triage</div>
+    </div>
+    <div class="pipeline" id="pip-b"></div>
+    <div class="step-content" id="content-b"></div>
+    <div class="step-nav">
+      <button class="btn" id="prev-b" onclick="prevStep('b')">← Previous</button>
+      <span class="step-counter" id="ctr-b"></span>
+      <button class="btn btn-next" id="next-b" onclick="nextStep('b')">Next Step →</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL C ═══ -->
+  <div id="panel-c" class="panel">
+    <div class="scenario-hdr">
+      <div>
+        <h2>Scenario C — Self-Improving Knowledge Loop</h2>
+        <p>Lily Shah's MRI question has no answer in the KB. The system flags it, alerts the CS team, the human provides an answer, Claude drafts a KB entry — and the next customer gets an instant reply.</p>
+      </div>
+      <div class="outcome-tag purple">⟳ System learns and improves</div>
+    </div>
+    <div class="pipeline" id="pip-c"></div>
+    <div class="step-content" id="content-c"></div>
+    <div class="step-nav">
+      <button class="btn" id="prev-c" onclick="prevStep('c')">← Previous</button>
+      <span class="step-counter" id="ctr-c"></span>
+      <button class="btn btn-next" id="next-c" onclick="nextStep('c')">Next Step →</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL D ═══ -->
+  <div id="panel-d" class="panel">
+    <div class="scenario-hdr">
+      <div>
+        <h2>Scenario D — Order Query Auto-Escalation</h2>
+        <p>Lucas Mehta's tracking query is immediately identified as an order status question. No KB search is attempted — the system routes straight to the CS team with a Shopify deeplink.</p>
+      </div>
+      <div class="outcome-tag blue">⇢ Instant Shopify escalation</div>
+    </div>
+    <div class="pipeline" id="pip-d"></div>
+    <div class="step-content" id="content-d"></div>
+    <div class="step-nav">
+      <button class="btn" id="prev-d" onclick="prevStep('d')">← Previous</button>
+      <span class="step-counter" id="ctr-d"></span>
+      <button class="btn btn-next" id="next-d" onclick="nextStep('d')">Next Step →</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL ANALYTICS ═══ -->
+  <div id="panel-analytics" class="panel">
+    <div class="scenario-hdr">
+      <div>
+        <h2>Intelligence Layer — Analytics Dashboard</h2>
+        <p>Every ticket feeds weekly theme clustering (Workflow 3) and monthly marketing briefs (Workflow 4) — turning support data into product and campaign intelligence.</p>
+      </div>
+      <div class="outcome-tag gold">70 tickets · 6 months</div>
+    </div>
+
+    <!-- Metric row -->
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-n text-green">50</div>
+        <div class="metric-l">Auto-answered by AI</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-n text-orange">10</div>
+        <div class="metric-l">Knowledge gaps detected</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-n text-blue">10</div>
+        <div class="metric-l">Order escalations</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-n text-gold">5</div>
+        <div class="metric-l">Gaps resolved → KB</div>
+      </div>
+    </div>
+
+    <div class="analytics-grid">
+      <!-- Bar chart -->
+      <div class="card">
+        <div class="card-top-bar gold"></div>
+        <div class="card-body">
+          <div class="card-title">Tickets by Question Type</div>
+          <div class="bar-chart" id="bar-chart"></div>
+        </div>
+      </div>
+
+      <!-- Persona distribution -->
+      <div class="card">
+        <div class="card-top-bar blue"></div>
+        <div class="card-body">
+          <div class="card-title">Buyer Persona Distribution</div>
+          <div class="persona-grid" id="persona-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weekly digest -->
+    <div class="analytics-full">
+      <div class="weekly-digest">
+        <div class="digest-hdr">
+          <div class="digest-title">⚡ Workflow 3 — Weekly Theme Digest</div>
+          <div class="digest-week">Week ending 12 May 2026 · 18 tickets · 72% answered</div>
+        </div>
+        <div class="digest-body">
+          <div class="theme-row">
+            <div class="theme-name">
+              <div class="signal-dot" style="background:var(--orange)"></div>
+              <strong>Materials & Safety</strong>
+            </div>
+            <div class="theme-count">6 tickets · health_conscious</div>
+            <div class="theme-action">Add child-safety badge to product pages</div>
+          </div>
+          <div class="theme-row">
+            <div class="theme-name">
+              <div class="signal-dot" style="background:var(--gold)"></div>
+              <strong>Engraving & Personalisation</strong>
+            </div>
+            <div class="theme-count">4 tickets · gifter</div>
+            <div class="theme-action">Feature engraving more prominently at checkout</div>
+          </div>
+          <div class="theme-row">
+            <div class="theme-name">
+              <div class="signal-dot" style="background:var(--blue)"></div>
+              <strong>Watch Servicing</strong>
+            </div>
+            <div class="theme-count">3 tickets · owner_aftercare</div>
+            <div class="theme-action">Add "When to service" guide to support page</div>
+          </div>
+          <div class="theme-row">
+            <div class="theme-name">
+              <div class="signal-dot" style="background:var(--purple)"></div>
+              <strong>Knowledge Gaps</strong>
+            </div>
+            <div class="theme-count">3 tickets · niche_buyer</div>
+            <div class="theme-action">MRI + sustainability gaps — flag for supplier Q&amp;A</div>
+          </div>
+          <div class="theme-row">
+            <div class="theme-name">
+              <div class="signal-dot" style="background:var(--text-muted)"></div>
+              <strong>Order Management</strong>
+            </div>
+            <div class="theme-count">2 tickets · transactional</div>
+            <div class="theme-action">Routed to CS via Shopify — no action</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Marketing brief -->
+    <div class="brief-card">
+      <div class="card-top-bar gold"></div>
+      <div class="brief-hdr">
+        <div class="brief-hdr-top">Workflow 4 — Monthly Marketing Brief · May 2026</div>
+        <div class="brief-title">"What customers are asking that is not on our product pages"</div>
+      </div>
+      <div class="brief-body">
+        <div class="insight-item">
+          <div class="insight-num">1</div>
+          <div class="insight-body">
+            <div class="insight-head">Health-conscious parents buying for children</div>
+            <div class="insight-sub">BPA-free, EU REACH, and nickel-free certifications are mentioned in nearly every materials question — but these badges don't appear on product listings. 9 tickets over the past month, all health_conscious persona. External check: Garmin and Apple Watch both lead with safety certifications above the fold. Boldr-specific gap.</div>
+            <span class="insight-persona-tag">Health-Conscious Buyer</span>
+          </div>
+        </div>
+        <div class="insight-item">
+          <div class="insight-num">2</div>
+          <div class="insight-body">
+            <div class="insight-head">Magnetic field / MRI resistance — a market-wide gap</div>
+            <div class="insight-sub">3 customers asked about MRI safety this month. Seiko, Citizen, and Tudor also have no public ISO 764 magnetic resistance specs for their mid-range movements. This is a market-wide knowledge gap — an opportunity to be first with transparent supplier data.</div>
+            <span class="insight-persona-tag">Active/Outdoor Buyer</span>
+          </div>
+        </div>
+        <div class="insight-item">
+          <div class="insight-num">3</div>
+          <div class="insight-body">
+            <div class="insight-head">Vegan &amp; sustainability-conscious buyers emerging</div>
+            <div class="insight-sub">Strap recycling, vegan materials, carbon-neutral shipping — 4 tickets this month, all niche_buyer. Reddit r/WatchHorology thread "ethical micro-brands" has 1,200 upvotes. Signal is growing. Boldr's titanium durability story is underutilised here.</div>
+            <span class="insight-persona-tag">Sustainability Advocate</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="card-title mt12">Recommended Actions</div>
+        <div class="rec-item">
+          <div class="rec-icon">📋</div>
+          <div class="rec-body"><strong>Product page update</strong> Add safety certification badges (BPA-free, EU REACH, Nickel-free, Hypoallergenic) above the fold on all product listings.</div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-icon">💬</div>
+          <div class="rec-body"><strong>New FAQ entry</strong> "Are Boldr watches safe near magnetic fields?" — prevents future gaps once supplier confirms ISO 764 status.</div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-icon">🌱</div>
+          <div class="rec-body"><strong>Campaign angle</strong> "Built to last — not disposable." Position titanium durability and FKM straps as the sustainable choice vs. stainless/silicone.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <strong>Boldr Customer Intelligence Engine</strong> · Built for Echelon 2026 · n8n · Claude API (claude-sonnet-4-6) · Supabase · Gmail · Slack
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// DATA
+// ──────────────────────────────────────────────────────────────────────────────
+
+const SCENARIOS = {
+
+  // ═══ SCENARIO A ═══
+  a: {
+    steps: [
+      {
+        label: 'Email\nReceived',
+        icon: '✉',
+        html: () => `
+          <div class="card">
+            <div class="card-top-bar green"></div>
+            <div class="card-body">
+              <div class="card-title">Gmail IMAP Trigger — New Email Detected</div>
+              <div class="email-hdr">
+                <div class="email-sender">
+                  <div class="avatar" style="background:#2980b9">V</div>
+                  <div>
+                    <div class="sender-name">Vikram Allen</div>
+                    <div class="sender-email">vikram95@hotmail.com</div>
+                  </div>
+                </div>
+                <div class="email-meta">
+                  <span class="channel-pill" style="background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)">Chat</span>
+                  <span class="text-muted">29 Jan 2026 · 16:19</span>
+                </div>
+              </div>
+              <div class="email-subject">Is the watch strap BPA-free?</div>
+              <div class="email-body">"Hi, I'm buying this for my young daughter and want to make sure the strap is BPA-free. Can you confirm?"</div>
+              <div class="email-foot">
+                <span class="text-muted">Ticket ID: TKT-1048</span>
+                <span class="text-muted">Routed to: cs-inbox label</span>
+              </div>
+            </div>
+          </div>
+          <div class="info-box mt12">
+            <span>🤖</span>
+            <span>n8n <strong>Workflow 1</strong> triggered. Gmail polling detected 1 unread email in cs-inbox. Proceeding to fetch knowledge base context from Supabase.</span>
+          </div>
+        `
+      },
+      {
+        label: 'KB Context\nBuilt',
+        icon: '🗄',
+        html: () => `
+          <div class="card">
+            <div class="card-top-bar gold"></div>
+            <div class="card-body">
+              <div class="card-title">Knowledge Base — 9 chunks loaded from Supabase kb_chunks</div>
+              <div class="tier-block">
+                <div class="tier-label t1">Tier 1 — Authoritative Pricing</div>
+                <div class="chunk-grid">
+                  <div class="chunk-pill"><span class="cid">KB-ENG-001</span> Engraving Rate Card</div>
+                  <div class="chunk-pill"><span class="cid">KB-SVC-001</span> Servicing Rate Card</div>
+                </div>
+              </div>
+              <div class="tier-block">
+                <div class="tier-label t2">Tier 2 — Product & FAQ</div>
+                <div class="chunk-grid">
+                  <div class="chunk-pill"><span class="cid">KB-PRD-001</span> Product Reference</div>
+                  <div class="chunk-pill"><span class="cid">KB-FAQ-001</span> Materials & Safety</div>
+                  <div class="chunk-pill"><span class="cid">KB-FAQ-002</span> Engraving FAQ</div>
+                  <div class="chunk-pill"><span class="cid">KB-FAQ-003</span> Strap Compatibility</div>
+                  <div class="chunk-pill"><span class="cid">KB-FAQ-004</span> Servicing FAQ</div>
+                  <div class="chunk-pill"><span class="cid">KB-FAQ-005</span> Orders & Returns</div>
+                </div>
+              </div>
+              <div class="tier-block">
+                <div class="tier-label t3">Tier 3 — Brand Voice</div>
+                <div class="chunk-grid">
+                  <div class="chunk-pill"><span class="cid">KB-SOP-001</span> SOP Process (prices stripped)</div>
+                </div>
+              </div>
+              <div class="kb-stat-bar">
+                <span>9 chunks · ~4,200 tokens · 0.8% of Claude's 200K context window</span>
+                <span style="color:var(--green)">✓ KB assembled</span>
+              </div>
+            </div>
+          </div>
+          <div class="info-box mt12">
+            <span>⚡</span>
+            <span>Tier 1 content appears <strong>first</strong> in the system prompt — Claude is instructed to use rate cards for all pricing, never the SOP (which has outdated figures).</span>
+          </div>
+        `
+      },
+      {
+        label: 'Claude\nAnalyses',
+        icon: '🧠',
+        html: () => `
+          <div class="two-col">
+            <div class="card">
+              <div class="card-top-bar gold"></div>
+              <div class="card-body">
+                <div class="card-title">Claude API Response · claude-sonnet-4-6</div>
+                <div class="json-viewer">
+{<br>
+&nbsp;&nbsp;<span class="j-key">"question_type"</span>: <span class="j-str">"materials_safety"</span>,<br>
+&nbsp;&nbsp;<span class="j-key">"intent_summary"</span>: <span class="j-str">"Customer wants BPA-free strap confirmation, buying for daughter"</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"answerable"</span>: <span class="j-bool">true</span>,</span>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"confidence"</span>: <span class="j-str">"high"</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"raw_persona_tag"</span>: <span class="j-str">"health_conscious"</span>,<br>
+&nbsp;&nbsp;<span class="j-key">"competition_persona_tag"</span>: <span class="j-str">"Health-Conscious Buyer"</span>,<br>
+&nbsp;&nbsp;<span class="j-key">"theme"</span>: <span class="j-str">"materials"</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"marketing_signal"</span>: <span class="j-bool">true</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"marketing_signal_reason"</span>: <span class="j-str">"Health-conscious parent buying for child — strong target persona"</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"kb_sources_used"</span>: <span class="j-arr">["KB-PRD-001", "KB-FAQ-001"]</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"requires_escalation"</span>: <span class="j-bool">false</span>,<br>
+&nbsp;&nbsp;<span class="j-key">"gap_summary"</span>: <span class="j-null">null</span><br>
+}
+                </div>
+              </div>
+            </div>
+            <div class="gap14">
+              <div class="callout green">
+                <div class="callout-icon">✓</div>
+                <div class="callout-text">
+                  <strong>Answerable: TRUE</strong>
+                  <p>KB-PRD-001 confirms: all FKM rubber straps are 100% BPA-free, nickel-free, EU REACH compliant. KB-FAQ-001 confirms hypoallergenic for FKM and nylon.</p>
+                </div>
+              </div>
+              <div class="callout gold">
+                <div class="callout-icon">📈</div>
+                <div class="callout-text">
+                  <strong>Marketing Signal Flagged</strong>
+                  <p>Health-conscious parent persona — BPA safety question is a recurring theme. Will surface in weekly digest and monthly marketing brief.</p>
+                </div>
+              </div>
+              <div class="callout blue">
+                <div class="callout-icon">👤</div>
+                <div class="callout-text">
+                  <strong>Persona: Health-Conscious Buyer</strong>
+                  <p>Classified as health_conscious (internal) and Health-Conscious Buyer (competition brief tag).</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'Route:\nDraft Reply',
+        icon: '⇢',
+        html: () => `
+          <div class="two-col">
+            <div class="card">
+              <div class="card-top-bar green"></div>
+              <div class="card-body">
+                <div class="card-title">Switch Node — Routing Decision</div>
+                <div class="route-branches">
+                  <div class="route-branch">
+                    <div class="route-icon">🛍️</div>
+                    <div style="flex:1">
+                      <div style="font-weight:600">Branch 1: Order Status</div>
+                      <div class="text-dim">question_type === "order_status"</div>
+                    </div>
+                    <div style="color:var(--text-muted)">✗ not matched</div>
+                  </div>
+                  <div class="route-branch selected">
+                    <div class="route-icon">✏️</div>
+                    <div style="flex:1">
+                      <div style="font-weight:600">Branch 2: Draft Reply</div>
+                      <div class="text-dim">answerable === true</div>
+                    </div>
+                    <div class="text-green fw6">✓ MATCHED</div>
+                  </div>
+                  <div class="route-branch">
+                    <div class="route-icon">🔍</div>
+                    <div style="flex:1">
+                      <div style="font-weight:600">Branch 3: Knowledge Gap</div>
+                      <div class="text-dim">answerable === false (fallback)</div>
+                    </div>
+                    <div style="color:var(--text-muted)">✗ not matched</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="callout green" style="align-self:flex-start">
+              <div class="callout-icon">✉</div>
+              <div class="callout-text">
+                <strong>Creating Gmail Draft</strong>
+                <p>Claude's draft_reply will be saved as a Gmail draft in the cs-inbox. The CS team reviews it and clicks Send. <br><br>No email is ever sent automatically.</p>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'Draft\nCreated',
+        icon: '✓',
+        html: () => `
+          <div class="gap14">
+            <div class="draft-email">
+              <div class="draft-toolbar">
+                <span>📧 Gmail Draft — cs@boldr.co</span>
+                <span class="draft-badge">Draft · Awaiting human approval</span>
+              </div>
+              <div style="padding:14px 16px 0;font-size:12px;color:var(--text-muted);">
+                <strong style="color:var(--text-dim)">To:</strong> vikram95@hotmail.com &nbsp;|&nbsp;
+                <strong style="color:var(--text-dim)">Subject:</strong> Re: Is the watch strap BPA-free?
+              </div>
+              <div class="draft-body">
+                Hi <strong>Vikram</strong>, thanks for reaching out!<br><br>
+                Happy to confirm — all Boldr FKM rubber straps are <strong>100% BPA-free and nickel-free</strong>. They also meet <strong>EU REACH compliance standards</strong>, which means they've been tested for over 200 hazardous substances and come out clean — safe for everyday wear, including for young wearers.<br><br>
+                The black FKM rubber strap that comes with the watch is your best choice for sensitive skin. If you'd like a splash of colour for your daughter, we also have Navy, Olive, and Red rubber straps (SGD 35 each) — all equally BPA-free and nickel-free.<br><br>
+                Let me know if there's anything else I can help with!<br><br>
+                Warm regards,<br>
+                <strong>Boldr Supply Co. · Customer Support</strong>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-top-bar green"></div>
+              <div class="card-body">
+                <div class="card-title">Supabase tickets — row logged</div>
+                <div class="db-table">
+                  <div class="db-thead" style="grid-template-columns: 100px 100px 80px 120px 80px 1fr">
+                    <div class="db-cell">ticket_id</div>
+                    <div class="db-cell">question_type</div>
+                    <div class="db-cell">answerable</div>
+                    <div class="db-cell">persona_tag</div>
+                    <div class="db-cell">mkt_signal</div>
+                    <div class="db-cell">kb_sources_used</div>
+                  </div>
+                  <div class="db-row highlight" style="grid-template-columns: 100px 100px 80px 120px 80px 1fr">
+                    <div class="db-cell" style="color:var(--gold)">TKT-1048</div>
+                    <div class="db-cell">materials_safety</div>
+                    <div class="db-cell" style="color:var(--green)">true</div>
+                    <div class="db-cell">health_conscious</div>
+                    <div class="db-cell" style="color:var(--gold)">true</div>
+                    <div class="db-cell">{KB-PRD-001, KB-FAQ-001}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="callout green">
+              <div class="callout-icon">🎯</div>
+              <div class="callout-text">
+                <strong>Complete. From email receipt to draft reply: &lt;10 seconds.</strong>
+                <p>The CS team opens their Gmail draft, reads the reply, and clicks Send. Every reply is human-approved. No email is ever sent automatically.</p>
+              </div>
+            </div>
+          </div>
+        `
+      }
+    ]
+  },
+
+  // ═══ SCENARIO B ═══
+  b: {
+    steps: [
+      {
+        label: 'Email\nReceived',
+        icon: '✉',
+        html: () => `
+          <div class="card">
+            <div class="card-top-bar orange"></div>
+            <div class="card-body">
+              <div class="card-title">Gmail IMAP Trigger — New Email Detected</div>
+              <div class="email-hdr">
+                <div class="email-sender">
+                  <div class="avatar" style="background:#8e44ad">M</div>
+                  <div>
+                    <div class="sender-name">Mila Yeo</div>
+                    <div class="sender-email">mila_yeo@hotmail.com</div>
+                  </div>
+                </div>
+                <div class="email-meta">
+                  <span class="channel-pill" style="background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd)">Email</span>
+                  <span class="text-muted">19 Apr 2026 · 16:19</span>
+                </div>
+              </div>
+              <div class="email-subject">Engraving in Arabic script</div>
+              <div class="email-body">"Can you engrave in Arabic? I want to put a dedication in Arabic for my father."</div>
+              <div class="email-foot">
+                <span class="text-muted">Ticket ID: TKT-1070</span>
+              </div>
+              <div class="warn-badge">
+                ⚠ Human CS agent previously tagged this ticket as: KNOWLEDGE GAP — "Unable to confirm Arabic engraving"
+              </div>
+            </div>
+          </div>
+          <div class="info-box mt12">
+            <span>🤖</span>
+            <span>The AI has no knowledge of the human's previous triage decision. It will search the KB independently and form its own judgement.</span>
+          </div>
+        `
+      },
+      {
+        label: 'Claude\nSearches KB',
+        icon: '🔎',
+        html: () => `
+          <div class="two-col">
+            <div class="card">
+              <div class="card-top-bar orange"></div>
+              <div class="card-body">
+                <div class="card-title">KB Search — claude-sonnet-4-6</div>
+                <div class="json-viewer">
+  Searching KB-ENG-001 (Engraving Rate Card)...<br>
+  <br>
+  <span style="color:var(--gold)">MATCH FOUND:</span><br>
+  <span style="color:#98c379">"Caseback engraving — Arabic script</span><br>
+  <span style="color:#98c379">&nbsp;(per character): SGD 3.00</span><br>
+  <span style="color:#98c379">&nbsp;Up to 15 Arabic characters"</span><br>
+  <br>
+  Searching KB-FAQ-002 (Engraving FAQ)...<br>
+  <span style="color:var(--gold)">MATCH FOUND:</span><br>
+  <span style="color:#98c379">"Q: Can you engrave in Arabic?</span><br>
+  <span style="color:#98c379">&nbsp;A: Yes. Arabic script engraving:</span><br>
+  <span style="color:#98c379">&nbsp;SGD 3.00/char, max 15 characters"</span><br>
+  <br>
+  <span style="color:var(--green)">answerable: true · confidence: high</span>
+                </div>
+              </div>
+            </div>
+            <div class="gap14">
+              <div class="callout green">
+                <div class="callout-icon">✓</div>
+                <div class="callout-text">
+                  <strong>Answer found in Tier 1 + Tier 2</strong>
+                  <p>KB-ENG-001 (rate card) explicitly lists Arabic script engraving at SGD 3.00 per character, up to 15 characters. KB-FAQ-002 confirms with a Q&A entry.</p>
+                </div>
+              </div>
+              <div class="callout orange">
+                <div class="callout-icon">⚠</div>
+                <div class="callout-text">
+                  <strong>Human CS agent missed this</strong>
+                  <p>The same question was tagged "KNOWLEDGE GAP" in the source data. The information was available all along — the AI found it; the human didn't.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'AI Corrects\nthe Gap',
+        icon: '★',
+        html: () => `
+          <div class="callout orange" style="margin-bottom:16px">
+            <div class="callout-icon" style="font-size:28px">★</div>
+            <div class="callout-text">
+              <strong style="font-size:16px">The AI found what the CS team missed.</strong>
+              <p style="font-size:13px;margin-top:4px">Arabic script engraving is clearly listed in the engraving rate card (KB-ENG-001) at SGD 3.00 per character, up to 15 characters maximum. A human agent tagged this as unanswerable. The AI answers it correctly in under 10 seconds.</p>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="card">
+              <div class="card-top-bar orange"></div>
+              <div class="card-body">
+                <div class="card-title">Claude API Response</div>
+                <div class="json-viewer">
+{<br>
+&nbsp;&nbsp;<span class="j-key">"question_type"</span>: <span class="j-str">"engraving"</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"answerable"</span>: <span class="j-bool">true</span>,</span>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"confidence"</span>: <span class="j-str">"high"</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"raw_persona_tag"</span>: <span class="j-str">"gifter"</span>,<br>
+&nbsp;&nbsp;<span class="j-key">"theme"</span>: <span class="j-str">"gifting"</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"kb_sources_used"</span>: <span class="j-arr">["KB-ENG-001", "KB-FAQ-002"]</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"gap_summary"</span>: <span class="j-null">null</span><br>
+}
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-top-bar green"></div>
+              <div class="card-body">
+                <div class="card-title">Draft Reply Created</div>
+                <div class="draft-body" style="background:var(--bg-elev);border-radius:8px;padding:14px">
+                  Hi <strong>Mila</strong>, thanks for reaching out!<br><br>
+                  Yes — we absolutely do offer <strong>Arabic script engraving</strong> on the caseback. It's priced at <strong>SGD 3.00 per character</strong>, with a maximum of <strong>15 Arabic characters</strong>. So for a short dedication, you're looking at around SGD 30–45 depending on length.<br><br>
+                  Engraving adds 2–3 business days to processing. If you need it sooner, same-day rush engraving (SGD 20 surcharge) is available for orders before 12pm SGT.<br><br>
+                  Please double-check the exact characters when you submit — once engraving begins, changes aren't possible.<br><br>
+                  <strong>Boldr Supply Co. · Customer Support</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'Result:\nCorrection',
+        icon: '✓',
+        html: () => `
+          <div class="gap14">
+            <div class="callout green">
+              <div class="callout-icon">🎯</div>
+              <div class="callout-text">
+                <strong>No knowledge gap created. Human error corrected.</strong>
+                <p>The ticket is logged as answerable: true. The previous human triage of "knowledge gap" was incorrect — the AI's systematic KB search found the answer the agent missed. This demonstrates that the AI is more reliable than manual triage for answerable questions.</p>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-top-bar green"></div>
+              <div class="card-body">
+                <div class="card-title">Supabase tickets — row logged</div>
+                <div class="db-table">
+                  <div class="db-thead" style="grid-template-columns: 100px 80px 80px 100px 1fr">
+                    <div class="db-cell">ticket_id</div>
+                    <div class="db-cell">question_type</div>
+                    <div class="db-cell">answerable</div>
+                    <div class="db-cell">persona_tag</div>
+                    <div class="db-cell">kb_sources_used</div>
+                  </div>
+                  <div class="db-row highlight" style="grid-template-columns: 100px 80px 80px 100px 1fr">
+                    <div class="db-cell" style="color:var(--gold)">TKT-1070</div>
+                    <div class="db-cell">engraving</div>
+                    <div class="db-cell" style="color:var(--green)">true</div>
+                    <div class="db-cell">gifter</div>
+                    <div class="db-cell">{KB-ENG-001, KB-FAQ-002}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="three-col">
+              <div class="callout blue">
+                <div class="callout-icon">👤</div>
+                <div class="callout-text">
+                  <strong>Human CS</strong>
+                  <p>Tagged: KNOWLEDGE GAP ✗</p>
+                </div>
+              </div>
+              <div class="callout green">
+                <div class="callout-icon">🧠</div>
+                <div class="callout-text">
+                  <strong>AI result</strong>
+                  <p>Answered: TRUE ✓</p>
+                </div>
+              </div>
+              <div class="callout gold">
+                <div class="callout-icon">⏱</div>
+                <div class="callout-text">
+                  <strong>Time to draft</strong>
+                  <p>Under 10 seconds</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      }
+    ]
+  },
+
+  // ═══ SCENARIO C ═══
+  c: {
+    steps: [
+      {
+        label: 'Email\nReceived',
+        icon: '✉',
+        html: () => `
+          <div class="card">
+            <div class="card-top-bar purple"></div>
+            <div class="card-body">
+              <div class="card-title">Gmail IMAP Trigger — New Email Detected</div>
+              <div class="email-hdr">
+                <div class="email-sender">
+                  <div class="avatar" style="background:#c0392b">L</div>
+                  <div>
+                    <div class="sender-name">Lily Shah</div>
+                    <div class="sender-email">lily_shah@gmail.com</div>
+                  </div>
+                </div>
+                <div class="email-meta">
+                  <span class="channel-pill" style="background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)">Chat</span>
+                  <span class="text-muted">15 Nov 2025 · 16:19</span>
+                </div>
+              </div>
+              <div class="email-subject">Magnetic field resistance</div>
+              <div class="email-body">"Is the movement resistant to magnetic fields? I work near MRI equipment."</div>
+              <div class="email-foot">
+                <span class="text-muted">Ticket ID: TKT-1046</span>
+                <span class="text-muted">Persona: niche_buyer</span>
+              </div>
+            </div>
+          </div>
+          <div class="phase-divider mt12">
+            <div class="phase-dot" style="background:var(--orange)"></div>
+            <div>
+              <span class="phase-phase">Phase 1</span>
+              <span class="phase-sub"> — Gap Detection &amp; Escalation</span>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'KB Search:\nNo Match',
+        icon: '✗',
+        html: () => `
+          <div class="two-col">
+            <div class="card">
+              <div class="card-top-bar purple"></div>
+              <div class="card-body">
+                <div class="card-title">Claude KB Search — No Answer Found</div>
+                <div class="json-viewer">
+  Searching KB-PRD-001 (Product Reference)...<br>
+  <span style="color:var(--text-muted)">Movement: Miyota 9015/6T33 — no magnetic spec listed</span><br>
+  <br>
+  Searching KB-FAQ-001 (Materials & Safety)...<br>
+  <span style="color:var(--text-muted)">BPA, nickel, lume safety covered — no ISO 764 mention</span><br>
+  <br>
+  Searching KB-SOP-001 (Brand Voice)...<br>
+  <span style="color:var(--text-muted)">Escalation rules — MRI flagged for supplier check</span><br>
+  <br>
+  <span style="color:var(--red)">No authoritative answer found.</span><br>
+  <span style="color:var(--orange)">Setting answerable: false</span><br>
+  <span style="color:var(--orange)">Generating gap_summary...</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-top-bar purple"></div>
+              <div class="card-body">
+                <div class="card-title">Claude API Response</div>
+                <div class="json-viewer">
+{<br>
+&nbsp;&nbsp;<span class="j-key">"question_type"</span>: <span class="j-str">"knowledge_gap"</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"answerable"</span>: <span class="j-bool">false</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"confidence"</span>: <span class="j-str">"high"</span>,<br>
+&nbsp;&nbsp;<span class="j-key">"raw_persona_tag"</span>: <span class="j-str">"niche_buyer"</span>,<br>
+&nbsp;&nbsp;<span class="j-key">"theme"</span>: <span class="j-str">"materials"</span>,<br>
+&nbsp;&nbsp;<span class="j-key">"requires_escalation"</span>: <span class="j-bool">true</span>,<br>
+&nbsp;&nbsp;<span class="j-key">"draft_reply"</span>: <span class="j-null">null</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"gap_summary"</span>: <span class="j-str">"Customer asking about magnetic field / MRI resistance. Not covered in any current KB. Requires supplier confirmation."</span></span>
+}
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'Gap\nFlagged',
+        icon: '⚑',
+        html: () => `
+          <div class="gap14">
+            <div class="callout orange">
+              <div class="callout-icon">⚑</div>
+              <div class="callout-text">
+                <strong>Knowledge Gap Created — GAP-1637000000001</strong>
+                <p>No draft reply is generated. The system inserts a record into Supabase knowledge_gaps and Slack-alerts the CS team with the question summary and a link to submit an answer.</p>
+              </div>
+            </div>
+            <div class="two-col">
+              <div class="card">
+                <div class="card-top-bar orange"></div>
+                <div class="card-body">
+                  <div class="card-title">Supabase knowledge_gaps — new row</div>
+                  <div class="db-table">
+                    <div class="db-thead" style="grid-template-columns: 1fr 1fr">
+                      <div class="db-cell">Field</div>
+                      <div class="db-cell">Value</div>
+                    </div>
+                    <div class="db-row" style="grid-template-columns: 1fr 1fr">
+                      <div class="db-cell" style="color:var(--text-dim)">gap_id</div>
+                      <div class="db-cell" style="color:var(--gold)">GAP-1637000000001</div>
+                    </div>
+                    <div class="db-row" style="grid-template-columns: 1fr 1fr">
+                      <div class="db-cell" style="color:var(--text-dim)">ticket_id</div>
+                      <div class="db-cell">TKT-1046</div>
+                    </div>
+                    <div class="db-row highlight" style="grid-template-columns: 1fr 1fr">
+                      <div class="db-cell" style="color:var(--text-dim)">question_summary</div>
+                      <div class="db-cell" style="white-space:normal;font-size:10px">Customer asking about magnetic field / MRI resistance. Not in KB. Requires supplier confirmation.</div>
+                    </div>
+                    <div class="db-row" style="grid-template-columns: 1fr 1fr">
+                      <div class="db-cell" style="color:var(--text-dim)">kb_draft_status</div>
+                      <div class="db-cell" style="color:var(--orange)">pending</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="slack-card">
+                <div class="slack-sidebar">
+                  <div class="slack-channel"># cs-team <span>· Boldr Supply Co.</span></div>
+                </div>
+                <div class="slack-msg">
+                  <div class="slack-avatar">🤖</div>
+                  <div class="slack-msg-inner">
+                    <div class="slack-name">Boldr AI Engine <span>Today at 16:19</span></div>
+                    <div class="slack-text">
+                      🔍 <strong>KNOWLEDGE GAP</strong> — niche_buyer | Theme: materials<br>
+                      <strong>Customer:</strong> Lily Shah (lily_shah@gmail.com)<br>
+                      <strong>Question:</strong> Magnetic field / MRI resistance. Not in KB. Supplier confirmation needed.<br>
+                      <strong>Marketing signal:</strong> false
+                      <div><span class="slack-action-btn">→ Submit Answer</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'CS Submits\nAnswer',
+        icon: '↩',
+        html: () => `
+          <div class="two-col">
+            <div class="webhook-card">
+              <div class="webhook-hdr">
+                <span class="method-badge">POST</span>
+                <span>n8n-instance.duckdns.org/webhook/gap-resolve</span>
+              </div>
+              <div class="webhook-body">
+                <div class="json-viewer">
+{<br>
+&nbsp;&nbsp;<span class="j-key">"gap_id"</span>: <span class="j-str">"GAP-1637000000001"</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"human_answer"</span>: <span class="j-str">"The Miyota movements in Boldr watches are not ISO 764 certified for magnetic resistance. We recommend keeping the watch away from strong magnetic fields. If you work near MRI equipment, consult your workplace safety officer before wearing."</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"cs_name"</span>: <span class="j-str">"Abel"</span><br>
+}
+                </div>
+              </div>
+            </div>
+            <div class="gap14">
+              <div class="info-box">
+                <span>⚙</span>
+                <span><strong>Workflow 2 triggered</strong>. The CS team confirmed the answer directly from the supplier. They POST to the n8n gap-resolve webhook, which triggers the KB entry drafting pipeline.</span>
+              </div>
+              <div class="callout purple">
+                <div class="callout-icon">⟳</div>
+                <div class="callout-text">
+                  <strong>Self-improving loop begins</strong>
+                  <p>Claude will now take the human's verified answer and draft a clean, brand-voice KB entry ready for final approval.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'Claude Drafts\nKB Entry',
+        icon: '📝',
+        html: () => `
+          <div class="two-col">
+            <div class="card">
+              <div class="card-top-bar purple"></div>
+              <div class="card-body">
+                <div class="card-title">Claude — KB Entry Drafter (Workflow 2)</div>
+                <div class="kb-entry">
+                  <div class="kb-entry-id">
+                    <span style="background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-bd);padding:2px 8px;border-radius:4px;font-size:10px">NEW ENTRY</span>
+                    chunk_id: KB-GAP-1637000000001
+                  </div>
+                  <div class="kb-q">Q: Is the Boldr movement resistant to magnetic fields? Is it safe to wear near MRI equipment?</div>
+                  <div class="kb-a">A: The Miyota movements used in Boldr watches (9015 and 6T33) are not ISO 764 certified for magnetic resistance. We recommend keeping the watch away from strong magnetic fields during normal use. If you work near MRI or other high-field equipment, please consult with your workplace safety officer before wearing the watch. We're happy to advise further — contact us at cs@boldr.co.</div>
+                </div>
+                <div class="kb-stat-bar">
+                  <span>source: gap_resolution · priority_rank: 2 · approved_by: Abel</span>
+                  <span style="color:var(--purple)">Tier 2 · immediate effect</span>
+                </div>
+              </div>
+            </div>
+            <div class="slack-card">
+              <div class="slack-sidebar">
+                <div class="slack-channel"># cs-team <span>· Workflow 2 · KB Draft</span></div>
+              </div>
+              <div class="slack-msg">
+                <div class="slack-avatar">📝</div>
+                <div class="slack-msg-inner">
+                  <div class="slack-name">Boldr AI Engine <span>Today at 17:42</span></div>
+                  <div class="slack-text">
+                    ✅ <strong>KB Draft Ready for Approval</strong><br>
+                    Gap: <strong>GAP-1637000000001</strong> — MRI magnetic resistance<br>
+                    <br>
+                    <em>Q: Is the Boldr movement resistant to magnetic fields?<br>
+                    A: The Miyota movements are not ISO 764 certified...</em>
+                    <div><span class="slack-action-btn">→ Approve &amp; Make Live</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'KB Entry\nGoes Live',
+        icon: '⬆',
+        html: () => `
+          <div class="gap14">
+            <div class="callout purple">
+              <div class="callout-icon">⬆</div>
+              <div class="callout-text">
+                <strong>KB-GAP-1637000000001 inserted into Supabase kb_chunks</strong>
+                <p>The approved entry is live immediately. The next time Workflow 1 fetches the KB, it will include this new chunk. No redeployment, no code change — the system has healed itself.</p>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-top-bar purple"></div>
+              <div class="card-body">
+                <div class="card-title">Supabase kb_chunks — after gap resolution</div>
+                <div class="db-table">
+                  <div class="db-thead" style="grid-template-columns: 140px 80px 120px 1fr">
+                    <div class="db-cell">chunk_id</div>
+                    <div class="db-cell">priority_rank</div>
+                    <div class="db-cell">source</div>
+                    <div class="db-cell">content (excerpt)</div>
+                  </div>
+                  <div class="db-row" style="grid-template-columns: 140px 80px 120px 1fr">
+                    <div class="db-cell">KB-ENG-001</div>
+                    <div class="db-cell" style="color:var(--gold)">1</div>
+                    <div class="db-cell">rate_card_engraving</div>
+                    <div class="db-cell">Engraving Rate Card...</div>
+                  </div>
+                  <div class="db-row" style="grid-template-columns: 140px 80px 120px 1fr">
+                    <div class="db-cell">KB-SVC-001</div>
+                    <div class="db-cell" style="color:var(--gold)">1</div>
+                    <div class="db-cell">rate_card_servicing</div>
+                    <div class="db-cell">Servicing Rate Card...</div>
+                  </div>
+                  <div class="db-row" style="grid-template-columns: 140px 80px 120px 1fr">
+                    <div class="db-cell">KB-PRD-001 ... KB-FAQ-005</div>
+                    <div class="db-cell" style="color:var(--blue)">2</div>
+                    <div class="db-cell">faq / product_ref</div>
+                    <div class="db-cell">Product, FAQ content...</div>
+                  </div>
+                  <div class="db-row highlight" style="grid-template-columns: 140px 80px 120px 1fr">
+                    <div class="db-cell" style="color:var(--purple)">KB-GAP-163700...</div>
+                    <div class="db-cell" style="color:var(--blue)">2</div>
+                    <div class="db-cell" style="color:var(--purple)">gap_resolution ✨</div>
+                    <div class="db-cell">Q: Is Boldr movement MRI-safe? A: Not ISO 764...</div>
+                  </div>
+                  <div class="db-row" style="grid-template-columns: 140px 80px 120px 1fr">
+                    <div class="db-cell">KB-SOP-001</div>
+                    <div class="db-cell" style="color:var(--purple-bg)">3</div>
+                    <div class="db-cell">sop_process</div>
+                    <div class="db-cell">Brand voice, escalation rules...</div>
+                  </div>
+                </div>
+                <div class="kb-stat-bar">
+                  <span>Previously 9 chunks → Now <strong style="color:var(--purple)">10 chunks</strong></span>
+                  <span style="color:var(--purple)">Gap resolution entry now live</span>
+                </div>
+              </div>
+            </div>
+            <div class="phase-divider">
+              <div class="phase-dot" style="background:var(--green)"></div>
+              <div>
+                <span class="phase-phase">Phase 2</span>
+                <span class="phase-sub"> — Same Question, New Customer</span>
+              </div>
+              <span class="time-skip">⏩ 3 weeks later...</span>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'Same Q\nNext Time',
+        icon: '↻',
+        html: () => `
+          <div class="card">
+            <div class="card-top-bar green"></div>
+            <div class="card-body">
+              <div class="card-title">New Email — Similar Question, New Customer</div>
+              <div class="email-hdr">
+                <div class="email-sender">
+                  <div class="avatar" style="background:#16a085">J</div>
+                  <div>
+                    <div class="sender-name">James Wu</div>
+                    <div class="sender-email">james.wu@gmail.com</div>
+                  </div>
+                </div>
+                <div class="email-meta">
+                  <span class="channel-pill" style="background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd)">Email</span>
+                  <span class="text-muted">7 Dec 2025 · 09:34</span>
+                </div>
+              </div>
+              <div class="email-subject">Wearing Boldr watch in hospital environment</div>
+              <div class="email-body">"Hi, I operate CT scanners at a hospital. Is the Boldr watch safe to wear in an MRI or high-field environment? I can't find this info on your website."</div>
+              <div class="email-foot">
+                <span class="text-muted">Ticket: TKT-1082 · New customer — system has no memory of TKT-1046</span>
+              </div>
+            </div>
+          </div>
+          <div class="info-box mt12">
+            <span>🤖</span>
+            <span>KB now contains <strong>10 chunks</strong>, including the approved gap resolution entry from the MRI question. Claude will search the full KB including this new entry.</span>
+          </div>
+        `
+      },
+      {
+        label: 'Now\nAnswered!',
+        icon: '✓',
+        html: () => `
+          <div class="gap14">
+            <div class="callout green">
+              <div class="callout-icon">⚡</div>
+              <div class="callout-text">
+                <strong style="font-size:16px">System resolved. Answered from gap resolution entry.</strong>
+                <p>The same type of question that was unanswerable on 15 Nov is now answered automatically on 7 Dec. The system learned from the human's input and applied it — permanently, instantly.</p>
+              </div>
+            </div>
+            <div class="two-col">
+              <div class="card">
+                <div class="card-top-bar green"></div>
+                <div class="card-body">
+                  <div class="card-title">Claude API Response — TKT-1082</div>
+                  <div class="json-viewer">
+{<br>
+&nbsp;&nbsp;<span class="j-key">"question_type"</span>: <span class="j-str">"knowledge_gap"</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"answerable"</span>: <span class="j-bool">true</span>,</span>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"kb_sources_used"</span>: <span class="j-arr">["KB-GAP-163700..."]</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"gap_summary"</span>: <span class="j-null">null</span><br>
+}
+                  </div>
+                </div>
+              </div>
+              <div class="draft-email">
+                <div class="draft-toolbar">
+                  <span>📧 Gmail Draft</span>
+                  <span class="draft-badge">Draft · Awaiting human approval</span>
+                </div>
+                <div class="draft-body">
+                  Hi <strong>James</strong>, thanks for reaching out!<br><br>
+                  The <strong>Miyota movements</strong> used in Boldr watches are <strong>not ISO 764 certified</strong> for magnetic resistance. We recommend keeping the watch away from strong magnetic fields during normal use.<br><br>
+                  If you work near MRI or other high-field equipment, please consult with your workplace safety officer before wearing the watch. We're happy to advise further at cs@boldr.co.<br><br>
+                  <strong>Boldr Supply Co. · Customer Support</strong>
+                </div>
+              </div>
+            </div>
+            <div class="three-col">
+              <div class="callout orange">
+                <div class="callout-icon">⚑</div>
+                <div class="callout-text"><strong>15 Nov 2025</strong><p>MRI question → gap → Slack alert → CS resolves</p></div>
+              </div>
+              <div class="callout purple">
+                <div class="callout-icon">📝</div>
+                <div class="callout-text"><strong>15 Nov 2025</strong><p>Claude drafts KB entry → approved → KB updated (10 chunks)</p></div>
+              </div>
+              <div class="callout green">
+                <div class="callout-icon">✓</div>
+                <div class="callout-text"><strong>7 Dec 2025</strong><p>Same topic → answered automatically from gap resolution</p></div>
+              </div>
+            </div>
+          </div>
+        `
+      }
+    ]
+  },
+
+  // ═══ SCENARIO D ═══
+  d: {
+    steps: [
+      {
+        label: 'Email\nReceived',
+        icon: '✉',
+        html: () => `
+          <div class="card">
+            <div class="card-top-bar blue"></div>
+            <div class="card-body">
+              <div class="card-title">Gmail IMAP Trigger — New Email Detected</div>
+              <div class="email-hdr">
+                <div class="email-sender">
+                  <div class="avatar" style="background:#e67e22">L</div>
+                  <div>
+                    <div class="sender-name">Lucas Mehta</div>
+                    <div class="sender-email">lucas.mehta@outlook.com</div>
+                  </div>
+                </div>
+                <div class="email-meta">
+                  <span class="channel-pill" style="background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-bd)">Instagram DM</span>
+                  <span class="text-muted">4 May 2026 · 16:19</span>
+                </div>
+              </div>
+              <div class="email-subject">Tracking number not updating</div>
+              <div class="email-body">"My tracking number DHL9697354961 hasn't updated in 5 days. Is there a delay?"</div>
+              <div class="email-foot">
+                <span class="text-muted">Ticket: TKT-1056 · Order: BLD-27477</span>
+              </div>
+            </div>
+          </div>
+          <div class="info-box mt12">
+            <span>🤖</span>
+            <span>Workflow 1 triggered. The system will determine whether to search the KB or escalate immediately based on Claude's classification.</span>
+          </div>
+        `
+      },
+      {
+        label: 'Order Query\nDetected',
+        icon: '⚡',
+        html: () => `
+          <div class="two-col">
+            <div class="card">
+              <div class="card-top-bar blue"></div>
+              <div class="card-body">
+                <div class="card-title">Claude API Response — Immediate Classification</div>
+                <div class="json-viewer">
+{<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"question_type"</span>: <span class="j-str">"order_status"</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"intent_summary"</span>: <span class="j-str">"Customer tracking DHL shipment DHL9697354961, no update in 5 days."</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"answerable"</span>: <span class="j-bool">false</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"raw_persona_tag"</span>: <span class="j-str">"transactional"</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"draft_reply"</span>: <span class="j-null">null</span>,</span>
+&nbsp;&nbsp;<span class="j-key">"gap_summary"</span>: <span class="j-null">null</span>,<br>
+<span class="j-hl">&nbsp;&nbsp;<span class="j-key">"order_escalation_note"</span>: <span class="j-str">"Order BLD-27477 — DHL tracking DHL9697354961 stalled for 5 days. Shopify check required."</span></span>
+}
+                </div>
+              </div>
+            </div>
+            <div class="gap14">
+              <div class="callout blue">
+                <div class="callout-icon">⚡</div>
+                <div class="callout-text">
+                  <strong>Order query identified instantly</strong>
+                  <p>Claude flags question_type: "order_status" before attempting any KB search. The routing rule is: if this matches, skip KB entirely and escalate.</p>
+                </div>
+              </div>
+              <div class="callout orange">
+                <div class="callout-icon">✗</div>
+                <div class="callout-text">
+                  <strong>KB search bypassed</strong>
+                  <p>Tracking numbers, refunds, cancellations, and address changes are never answered from KB. They require Shopify access. The system knows this by design.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'Shopify\nEscalation',
+        icon: '🛍',
+        html: () => `
+          <div class="gap14">
+            <div class="slack-card">
+              <div class="slack-sidebar">
+                <div class="slack-channel"># cs-team <span>· Order Escalations</span></div>
+              </div>
+              <div class="slack-msg">
+                <div class="slack-avatar">🛍️</div>
+                <div class="slack-msg-inner">
+                  <div class="slack-name">Boldr AI Engine <span>Today at 16:19</span></div>
+                  <div class="slack-text">
+                    🛍️ <strong>ORDER QUERY — Lucas Mehta</strong> (lucas.mehta@outlook.com)<br>
+                    <strong>Subject:</strong> Tracking number not updating<br>
+                    <strong>Intent:</strong> Customer tracking DHL shipment DHL9697354961, no update in 5 days.<br>
+                    <strong>Order ref:</strong> BLD-27477<br>
+                    <div><span class="slack-action-btn">→ Open in Shopify Admin</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="two-col">
+              <div class="card">
+                <div class="card-top-bar blue"></div>
+                <div class="card-body">
+                  <div class="card-title">Supabase tickets — row logged</div>
+                  <div class="db-table">
+                    <div class="db-thead" style="grid-template-columns: 100px 100px 100px 1fr">
+                      <div class="db-cell">ticket_id</div>
+                      <div class="db-cell">question_type</div>
+                      <div class="db-cell">order_escalated</div>
+                      <div class="db-cell">intent_summary</div>
+                    </div>
+                    <div class="db-row highlight" style="grid-template-columns: 100px 100px 100px 1fr">
+                      <div class="db-cell" style="color:var(--gold)">TKT-1056</div>
+                      <div class="db-cell">order_status</div>
+                      <div class="db-cell" style="color:var(--blue)">true</div>
+                      <div class="db-cell" style="font-size:10px;white-space:normal">DHL tracking stalled 5 days — Shopify check</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="callout blue">
+                <div class="callout-icon">🎯</div>
+                <div class="callout-text">
+                  <strong>Zero KB tokens consumed</strong>
+                  <p>Order queries bypass KB assembly entirely. The CS team gets the Shopify deeplink in Slack and resolves it directly — no AI-generated reply draft.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        label: 'Summary',
+        icon: '✓',
+        html: () => `
+          <div class="gap14">
+            <div class="callout blue">
+              <div class="callout-icon">🛍</div>
+              <div class="callout-text">
+                <strong>All 10 order queries across 70 tickets handled in &lt;10 seconds.</strong>
+                <p>No KB content required. No draft reply generated. CS team gets a Slack alert with Shopify deeplink. Total AI cost for order queries: near zero (just the classification call).</p>
+              </div>
+            </div>
+            <div class="three-col">
+              <div class="card">
+                <div class="card-top-bar blue"></div>
+                <div class="card-body" style="text-align:center">
+                  <div style="font-size:28px;font-weight:700;color:var(--blue)">10</div>
+                  <div class="text-dim" style="font-size:12px;margin-top:4px">Order tickets<br>in 6 months</div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-top-bar green"></div>
+                <div class="card-body" style="text-align:center">
+                  <div style="font-size:28px;font-weight:700;color:var(--green)">100%</div>
+                  <div class="text-dim" style="font-size:12px;margin-top:4px">Auto-escalated<br>to Shopify</div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-top-bar gold"></div>
+                <div class="card-body" style="text-align:center">
+                  <div style="font-size:28px;font-weight:700;color:var(--gold)">&lt;10s</div>
+                  <div class="text-dim" style="font-size:12px;margin-top:4px">Email to<br>Slack alert</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      }
+    ]
+  }
+};
+
+// ──────────────────────────────────────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────────────────────────────────────
+const state = {
+  tab: 'a',
+  steps: { a: 0, b: 0, c: 0, d: 0 }
+};
+
+// ──────────────────────────────────────────────────────────────────────────────
+// TAB SWITCHING
+// ──────────────────────────────────────────────────────────────────────────────
+function showTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  const tabs = document.querySelectorAll('.tab');
+  const order = ['a','b','c','d','analytics'];
+  tabs[order.indexOf(tab)].classList.add('active');
+  if (tab !== 'analytics') renderStep(tab);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// STEP NAVIGATION
+// ──────────────────────────────────────────────────────────────────────────────
+function nextStep(tab) {
+  const max = SCENARIOS[tab].steps.length - 1;
+  if (state.steps[tab] < max) {
+    state.steps[tab]++;
+    renderStep(tab);
+  }
+}
+
+function prevStep(tab) {
+  if (state.steps[tab] > 0) {
+    state.steps[tab]--;
+    renderStep(tab);
+  }
+}
+
+function renderStep(tab) {
+  const scenario = SCENARIOS[tab];
+  const stepIdx  = state.steps[tab];
+  const steps    = scenario.steps;
+
+  // Pipeline
+  const pip = document.getElementById('pip-' + tab);
+  pip.innerHTML = steps.map((s, i) => {
+    const cls = i < stepIdx ? 'done' : i === stepIdx ? 'active' : '';
+    const icon = i < stepIdx ? '✓' : s.icon;
+    return `
+      ${i > 0 ? `<div class="pip-connector ${i <= stepIdx ? 'done' : ''}"></div>` : ''}
+      <div class="pip-step ${cls}" onclick="jumpStep('${tab}', ${i})">
+        <div class="pip-dot">${icon}</div>
+        <div class="pip-label">${s.label}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Content
+  const content = document.getElementById('content-' + tab);
+  content.style.opacity = '0';
+  content.style.transform = 'translateY(8px)';
+  setTimeout(() => {
+    content.innerHTML = steps[stepIdx].html();
+    content.style.transition = 'opacity 0.3s, transform 0.3s';
+    content.style.opacity = '1';
+    content.style.transform = 'translateY(0)';
+  }, 80);
+
+  // Buttons
+  const prev = document.getElementById('prev-' + tab);
+  const next = document.getElementById('next-' + tab);
+  if (prev) prev.disabled = (stepIdx === 0);
+  if (next) {
+    const isLast = stepIdx === steps.length - 1;
+    next.disabled = isLast;
+    next.textContent = isLast ? '✓ Complete' : 'Next Step →';
+  }
+
+  // Counter
+  const ctr = document.getElementById('ctr-' + tab);
+  if (ctr) ctr.textContent = `Step ${stepIdx + 1} of ${steps.length}`;
+}
+
+function jumpStep(tab, idx) {
+  state.steps[tab] = idx;
+  renderStep(tab);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ANALYTICS — BAR CHART
+// ──────────────────────────────────────────────────────────────────────────────
+function initAnalytics() {
+  const barData = [
+    { label: 'Materials & Safety',   count: 10, color: '#e67e22' },
+    { label: 'Servicing',            count: 10, color: '#3498db' },
+    { label: 'Strap Compatibility',  count: 10, color: '#27ae60' },
+    { label: 'Engraving',            count: 10, color: '#c9a84c' },
+    { label: 'Product General',      count: 10, color: '#9b59b6' },
+    { label: 'Knowledge Gaps',       count: 10, color: '#e74c3c' },
+    { label: 'Order Status',         count: 10, color: '#7f8c8d' },
+  ];
+  const max = Math.max(...barData.map(d => d.count));
+  const bc = document.getElementById('bar-chart');
+  if (!bc) return;
+  bc.innerHTML = barData.map(d => `
+    <div class="bar-row">
+      <div class="bar-label">${d.label}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(d.count/max*100)}%;background:${d.color}">${d.count}</div>
+      </div>
+      <div class="bar-num">${d.count}</div>
+    </div>
+  `).join('');
+
+  const personaData = [
+    { name: 'Owner Aftercare',    count: 10, color: '#3498db'  },
+    { name: 'Enthusiast',         count: 10, color: '#27ae60'  },
+    { name: 'Gifter',             count: 10, color: '#c9a84c'  },
+    { name: 'Prospect',           count: 10, color: '#9b59b6'  },
+    { name: 'Transactional',      count: 10, color: '#7f8c8d'  },
+    { name: 'Niche Buyer',        count: 10, color: '#e74c3c'  },
+    { name: 'Health-Conscious',   count:  9, color: '#e67e22'  },
+  ];
+  const pg = document.getElementById('persona-grid');
+  if (!pg) return;
+  pg.innerHTML = personaData.map(p => `
+    <div class="persona-card">
+      <div class="persona-name">${p.name}</div>
+      <div class="persona-count">${p.count} tickets</div>
+      <div class="persona-bar" style="background:${p.color};opacity:0.7"></div>
+    </div>
+  `).join('');
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// STATS COUNTER
+// ──────────────────────────────────────────────────────────────────────────────
+function countUp(el, target, duration) {
+  const start = Date.now();
+  const timer = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / duration, 1);
+    el.textContent = Math.round(progress * target);
+    if (progress === 1) clearInterval(timer);
+  }, 16);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderStep('a');
+  initAnalytics();
+
+  // Stats counters
+  const t = document.getElementById('stat-tickets');
+  const k = document.getElementById('stat-kb');
+  if (t) countUp(t, 70, 1200);
+  if (k) countUp(k,  9,  800);
+});
+</script>
+</body>
+</html>

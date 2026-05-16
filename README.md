@@ -4,6 +4,8 @@ An AI-powered customer support system for **Boldr Supply Co.**, a Singapore tita
 
 The system reads incoming customer emails, classifies them, drafts replies from a structured knowledge base, flags unanswerable questions as knowledge gaps, and surfaces weekly/monthly marketing intelligence from accumulated ticket data — all running on self-hosted n8n.
 
+**Live demo:** [customer-ai-engine.netlify.app](https://customer-ai-engine.netlify.app)
+
 ---
 
 ## Architecture Overview
