@@ -1,0 +1,11 @@
+service,price_sgd,notes
+Caseback engraving — up to 20 characters,25,Standard Roman/Latin script only
+Caseback engraving — 21 to 40 characters,40,Standard Roman/Latin script only
+Caseback engraving — per additional character (beyond 40),1.5,Max 60 characters total
+Caseback engraving — Chinese/Japanese/Korean characters (per character),3.0,Up to 15 CJK characters
+Caseback engraving — Arabic script (per character),3.0,Up to 15 characters
+Strap buckle engraving — up to 10 characters,15,Metal buckle only; not available on rubber/NATO
+Logo/symbol engraving (custom vector art),60,Customer must supply vector file (.ai or .svg); approval required
+Multi-line engraving (2 lines),35,Includes up to 30 characters total across both lines
+Rush engraving (same-day processing),20,Order must be placed before 12pm SGT; subject to availability
+"Engraving correction (post-submission, within 1 hour of order)",0,Free if requested within 1 hour; SGD 15 thereafter

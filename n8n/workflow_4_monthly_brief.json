@@ -1,0 +1,138 @@
+{
+  "name": "Boldr — Workflow 4: Monthly Marketing Brief",
+  "nodes": [
+    {
+      "id": "d4e5f6g7-0001-0001-0001-d4e5f6g70001",
+      "name": "Schedule - 1st Monday of Month",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 0 1-7 * 1" }]
+        }
+      }
+    },
+    {
+      "id": "d4e5f6g7-0002-0002-0002-d4e5f6g70002",
+      "name": "Fetch Last 4 Weeks Clusters",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [470, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/theme_clusters?select=*&week_ending=gte.' + new Date(Date.now() - 28*24*60*60*1000).toISOString().split('T')[0] + '&order=week_ending.desc' }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d4e5f6g7-0003-0003-0003-d4e5f6g70003",
+      "name": "Prepare Brief Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const allItems = $input.all();\nconst clusterList = allItems.map(item => item.json);\n\nconst briefId = 'BRIEF-' + new Date().toISOString().substring(0, 7).replace('-', '');\nconst monthEnding = new Date().toISOString().split('T')[0];\nconst monthLabel = new Date().toLocaleString('en-SG', { month: 'long', year: 'numeric' });\n\nreturn [{ json: {\n  brief_id: briefId,\n  month_ending: monthEnding,\n  month_label: monthLabel,\n  cluster_count: clusterList.length,\n  clusters_json: clusterList\n} }];"
+      }
+    },
+    {
+      "id": "d4e5f6g7-0004-0004-0004-d4e5f6g70004",
+      "name": "Claude - Marketing Brief",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [930, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key",        "value": "YOUR_ANTHROPIC_API_KEY" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4000, messages: [{ role: 'user', content: 'You are a marketing analyst for Boldr Supply Co., a Singapore titanium watch micro-brand.\\n\\nInternal data from the past month customer support tickets (' + $json.cluster_count + ' weeks of theme clusters):\\n' + JSON.stringify($json.clusters_json, null, 2) + '\\n\\nYour task:\\n1. Write a one-page marketing brief titled: What customers are asking that is not on our product pages — ' + $json.month_label + '\\n2. Tag each insight with the relevant buyer persona: Health-Conscious Buyer | Gifter | Enthusiast/Collector | Active/Outdoor Buyer | Sustainability Advocate\\n3. For each insight, state: Is this a Boldr-specific gap or a market-wide concern?\\n4. Identify the top 3 themes that recurred across multiple weeks (strong signals).\\n5. For each strong signal: What should Boldr do? (product page update / campaign angle / new FAQ entry)\\n6. End with 3 concrete action recommendations.\\n\\nReturn structured markdown. Be specific and actionable. Write for a non-technical marketing team.' }] }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "d4e5f6g7-0005-0005-0005-d4e5f6g70005",
+      "name": "Store Brief in Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/marketing_briefs",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ brief_id: $('Prepare Brief Context').item.json.brief_id, month_ending: $('Prepare Brief Context').item.json.month_ending, brief_markdown: $input.item.json.content[0].text, persona_insights: {}, external_signals: {} }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "d4e5f6g7-0006-0006-0006-d4e5f6g70006",
+      "name": "Slack - Brief Ready",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1390, 300],
+      "parameters": {
+        "operation": "post",
+        "channel": "#cs-team",
+        "text": "={{ '📋 *MONTHLY MARKETING BRIEF READY* — ' + $('Prepare Brief Context').item.json.month_label + '\\n\\nBrief ID: ' + $('Prepare Brief Context').item.json.brief_id + '\\nWeeks analysed: ' + $('Prepare Brief Context').item.json.cluster_count + '\\n\\nStored in Supabase → marketing_briefs table.\\n\\n_Preview:_\\n' + $('Claude - Marketing Brief').item.json.content[0].text.substring(0, 600) + '...' }}",
+        "otherOptions": { "mrkdwn": true }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule - 1st Monday of Month": {
+      "main": [[{ "node": "Fetch Last 4 Weeks Clusters", "type": "main", "index": 0 }]]
+    },
+    "Fetch Last 4 Weeks Clusters": {
+      "main": [[{ "node": "Prepare Brief Context", "type": "main", "index": 0 }]]
+    },
+    "Prepare Brief Context": {
+      "main": [[{ "node": "Claude - Marketing Brief", "type": "main", "index": 0 }]]
+    },
+    "Claude - Marketing Brief": {
+      "main": [[{ "node": "Store Brief in Supabase", "type": "main", "index": 0 }]]
+    },
+    "Store Brief in Supabase": {
+      "main": [[{ "node": "Slack - Brief Ready", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "id": "wf-boldr-004-monthly",
+  "meta": { "instanceId": "boldr-n8n" },
+  "notes": "Schedule: Cron 0 0 1-7 * 1 = first Monday of each month, 00:00 UTC (08:00 SGT)\nOPTION B: All credentials hardcoded — no env vars, no Set Variables node. Dates (briefId, monthEnding, monthLabel) computed inline in Prepare Brief Context code node."
+}

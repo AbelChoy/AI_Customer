@@ -1,0 +1,360 @@
+{
+  "name": "Boldr — Workflow 1: Email Processing",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001-0001-0001-a1b2c3d40001",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "parameters": {
+        "mailbox": "INBOX",
+        "action": "read",
+        "downloadAttachments": false,
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "forceReconnect": 60
+        }
+      },
+      "credentials": {
+        "imap": {
+          "id": "REPLACE_WITH_YOUR_IMAP_CREDENTIAL_ID",
+          "name": "Gmail IMAP"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0001b-001b-001b-a1b2c3d4001b",
+      "name": "Fetch KB Chunks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/kb_chunks?select=content,priority_rank,source&order=priority_rank.asc",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0001c-001c-001c-a1b2c3d4001c",
+      "name": "Set Email Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [710, 300],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "ef1", "name": "customer_name",  "value": "={{ $('Gmail Trigger').first().json.fromFull?.name || '' }}",                                                                           "type": "string" },
+            { "id": "ef2", "name": "customer_email", "value": "={{ $('Gmail Trigger').first().json.fromFull?.address || '' }}",                                                                       "type": "string" },
+            { "id": "ef3", "name": "email_subject",  "value": "={{ $('Gmail Trigger').first().json.subject || '' }}",                                                                                 "type": "string" },
+            { "id": "ef4", "name": "email_body",     "value": "={{ $('Gmail Trigger').first().json.textPlain || $('Gmail Trigger').first().json.text || '' }}", "type": "string" }
+          ]
+        },
+        "options": { "includeOtherFields": true }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0002-0002-0002-a1b2c3d40002",
+      "name": "Build KB Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [940, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const allItems = $input.all();\nconst chunks = allItems.map(item => ({\n  content: item.json.content,\n  priority_rank: item.json.priority_rank,\n  source: item.json.source\n}));\n\nconst first = allItems[0].json;\nconst customerName  = first.customer_name  || 'Customer';\nconst customerEmail = first.customer_email || '';\nconst emailSubject  = first.email_subject  || '';\nconst emailBody     = first.email_body     || '';\n\nconst tier1 = chunks.filter(c => c.priority_rank === 1);\nconst tier2 = chunks.filter(c => c.priority_rank === 2 && c.source !== 'gap_resolution');\nconst tier3 = chunks.filter(c => c.priority_rank === 3);\nconst gaps  = chunks.filter(c => c.source === 'gap_resolution');\n\nconst sep = '='.repeat(60);\n\nlet sp = 'You are the AI customer service assistant for Boldr Supply Co., a premium Singapore-based titanium watch micro-brand.\\n\\n';\nsp += 'YOUR TASK: Analyse the customer email and return a single JSON object (no other text, no markdown).\\n\\n';\nsp += 'RULES:\\n';\nsp += '1. PRICING: Always use Tier 1 (Rate Cards) for all prices. Never use the SOP — it has outdated prices.\\n';\nsp += '2. HONESTY: If the answer is not in the KB, set answerable: false. Do NOT guess. Return gap_summary.\\n';\nsp += '3. ORDER QUERIES: If the email is about an order (tracking, refund, cancellation, wrong item, address change), set question_type to order_status immediately. Set answerable: false and draft_reply: null.\\n';\nsp += '4. DRAFT REPLIES: Friendly, direct, premium brand voice. Open with: Hi [Name], thanks for reaching out!\\n';\nsp += '5. ESCALATION: Flag requires_escalation: true for MRI/magnetic safety, shock ratings, discontinued models, bulk orders 5+, angry customers, logo engraving.\\n\\n';\nsp += sep + '\\nTIER 1 — RATE CARDS — AUTHORITATIVE PRICING\\nUse for ALL price and turnaround queries. Overrides FAQ and SOP.\\n' + sep + '\\n';\nsp += tier1.map(c => c.content).join('\\n\\n') + '\\n\\n';\nsp += sep + '\\nTIER 2 — FAQ AND PRODUCT REFERENCE\\nUse for specifications, materials, compatibility, Q&A.\\n' + sep + '\\n';\nsp += tier2.map(c => c.content).join('\\n\\n') + '\\n\\n';\nsp += sep + '\\nTIER 3 — BRAND VOICE AND PROCESS (no prices)\\n' + sep + '\\n';\nsp += tier3.map(c => c.content).join('\\n\\n');\n\nif (gaps.length > 0) {\n  sp += '\\n\\n' + sep + '\\nAPPROVED KB ENTRIES FROM GAP RESOLUTION (treat as Tier 2)\\n' + sep + '\\n';\n  sp += gaps.map(c => c.content).join('\\n\\n');\n}\n\nconst schema = {\n  question_type: 'engraving|servicing|materials_safety|strap_compatibility|product_general|order_status|knowledge_gap',\n  intent_summary: 'one sentence',\n  answerable: true,\n  confidence: 'high|medium|low',\n  raw_persona_tag: 'health_conscious|gifter|enthusiast|niche_buyer|prospect|owner_aftercare|transactional',\n  competition_persona_tag: 'Health-Conscious Buyer|Gifter|Enthusiast/Collector|Active/Outdoor Buyer|Sustainability Advocate|null',\n  theme: 'materials|sustainability|sizing|gifting|servicing|order|product_specs|other',\n  marketing_signal: false,\n  marketing_signal_reason: null,\n  kb_sources_used: [],\n  requires_escalation: false,\n  escalation_reason: null,\n  draft_reply: 'Hi [Name], thanks for reaching out! ...',\n  gap_summary: null\n};\n\nsp += '\\n\\nRETURN THIS JSON SCHEMA EXACTLY (no other text):\\n' + JSON.stringify(schema, null, 2);\n\nreturn [{ json: {\n  system_prompt: sp,\n  chunk_count: chunks.length,\n  customer_name: customerName,\n  customer_email: customerEmail,\n  email_subject: emailSubject,\n  email_body: emailBody\n} }];"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0003-0003-0003-a1b2c3d40003",
+      "name": "Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1170, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key",        "value": "YOUR_ANTHROPIC_API_KEY" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1500, system: $json.system_prompt, messages: [{ role: 'user', content: 'Process this customer enquiry and return JSON only.\\n\\nCustomer name: ' + $json.customer_name + '\\nCustomer email: ' + $json.customer_email + '\\nSubject: ' + $json.email_subject + '\\nMessage:\\n' + $json.email_body }] }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0003b-003b-003b-a1b2c3d4003b",
+      "name": "Attach Email Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1400, 300],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "ae1", "name": "customer_name",  "value": "={{ $('Build KB Context').first().json.customer_name }}",  "type": "string" },
+            { "id": "ae2", "name": "customer_email", "value": "={{ $('Build KB Context').first().json.customer_email }}", "type": "string" },
+            { "id": "ae3", "name": "email_subject",  "value": "={{ $('Build KB Context').first().json.email_subject }}",  "type": "string" },
+            { "id": "ae4", "name": "email_body",     "value": "={{ $('Build KB Context').first().json.email_body }}",     "type": "string" }
+          ]
+        },
+        "options": { "includeOtherFields": true }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0004-0004-0004-a1b2c3d40004",
+      "name": "Parse Claude Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1630, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first().json;\n\nconst baseFields = {\n  customer_email: item.customer_email || '',\n  customer_name:  item.customer_name  || 'Customer',\n  email_subject:  item.email_subject  || '',\n  email_body:     item.email_body     || '',\n  received_at:    new Date().toISOString(),\n  ticket_id:      'TKT-' + Date.now()\n};\n\nif (!item.content || !Array.isArray(item.content) || item.content.length === 0) {\n  return [{ json: Object.assign({\n    question_type: 'knowledge_gap',\n    answerable: false,\n    confidence: 'low',\n    raw_persona_tag: 'niche_buyer',\n    competition_persona_tag: null,\n    theme: 'other',\n    marketing_signal: false,\n    marketing_signal_reason: null,\n    kb_sources_used: [],\n    requires_escalation: true,\n    escalation_reason: 'Claude API returned no content — check API key or request structure',\n    draft_reply: null,\n    gap_summary: 'API error. Full response: ' + JSON.stringify(item).substring(0, 500)\n  }, baseFields) }];\n}\n\nconst rawText = item.content[0].text;\n\nlet parsed;\ntry {\n  const clean = rawText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  parsed = JSON.parse(clean);\n} catch (e) {\n  parsed = {\n    question_type: 'knowledge_gap',\n    answerable: false,\n    confidence: 'low',\n    raw_persona_tag: 'niche_buyer',\n    competition_persona_tag: null,\n    theme: 'other',\n    marketing_signal: false,\n    marketing_signal_reason: null,\n    kb_sources_used: [],\n    requires_escalation: true,\n    escalation_reason: 'Claude response parse error — manual review required',\n    draft_reply: null,\n    gap_summary: 'Parse error. Raw response: ' + rawText.substring(0, 300)\n  };\n}\n\nreturn [{ json: Object.assign(parsed, baseFields) }];"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0005-0005-0005-a1b2c3d40005",
+      "name": "Route by Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1860, 300],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.question_type }}",
+                    "rightValue": "order_status",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Order Escalation"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.answerable }}",
+                    "rightValue": true,
+                    "operator": { "type": "boolean", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Draft Reply"
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0006-0006-0006-a1b2c3d40006",
+      "name": "Log Ticket - Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2090, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/tickets",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket_id: $json.ticket_id, received_at: $json.received_at, customer_name: $json.customer_name, customer_email: $json.customer_email, channel: 'email', subject: $json.email_subject, message_body: $json.email_body, question_type: $json.question_type, intent_summary: $json.intent_summary || null, answerable: false, persona_tag: $json.raw_persona_tag || null, competition_persona: $json.competition_persona_tag || null, theme: $json.theme || null, marketing_signal: false, draft_reply: null, kb_sources_used: [], gap_flag: false, order_escalated: true }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0007-0007-0007-a1b2c3d40007",
+      "name": "Slack - Order Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [2320, 100],
+      "parameters": {
+        "operation": "post",
+        "channel": "#cs-team",
+        "text": "={{ '🛍️ *ORDER QUERY* — ' + $json.customer_name + ' (' + $json.customer_email + ')\\nSubject: ' + $json.email_subject + '\\nIntent: ' + ($json.intent_summary || 'N/A') + '\\n→ Shopify Admin: https://admin.shopify.com/store/boldr/orders' }}",
+        "otherOptions": { "mrkdwn": true }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0008-0008-0008-a1b2c3d40008",
+      "name": "Log Ticket - Answerable",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2090, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/tickets",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket_id: $json.ticket_id, received_at: $json.received_at, customer_name: $json.customer_name, customer_email: $json.customer_email, channel: 'email', subject: $json.email_subject, message_body: $json.email_body, question_type: $json.question_type, intent_summary: $json.intent_summary || null, answerable: true, persona_tag: $json.raw_persona_tag || null, competition_persona: $json.competition_persona_tag || null, theme: $json.theme || null, marketing_signal: $json.marketing_signal || false, draft_reply: $json.draft_reply || null, kb_sources_used: $json.kb_sources_used || [], gap_flag: false, order_escalated: false }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0010-0010-0010-a1b2c3d40010",
+      "name": "Log Gap to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2090, 500],
+      "parameters": {
+        "method": "POST",
+        "url": "https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/knowledge_gaps",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ gap_id: 'GAP-' + Date.now(), ticket_id: $json.ticket_id, question_summary: $json.gap_summary || $json.intent_summary || 'No summary', theme: $json.theme || 'other', persona_tag: $json.raw_persona_tag || null, marketing_signal: $json.marketing_signal || false, kb_draft_status: 'pending' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0011-0011-0011-a1b2c3d40011",
+      "name": "Log Ticket - Gap",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2320, 500],
+      "parameters": {
+        "method": "POST",
+        "url": "https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/tickets",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket_id: $json.ticket_id, received_at: $json.received_at, customer_name: $json.customer_name, customer_email: $json.customer_email, channel: 'email', subject: $json.email_subject, message_body: $json.email_body, question_type: $json.question_type, intent_summary: $json.intent_summary || null, answerable: false, persona_tag: $json.raw_persona_tag || null, competition_persona: $json.competition_persona_tag || null, theme: $json.theme || null, marketing_signal: $json.marketing_signal || false, draft_reply: null, kb_sources_used: [], gap_flag: true, order_escalated: false }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0012-0012-0012-a1b2c3d40012",
+      "name": "Slack - Gap Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [2550, 500],
+      "parameters": {
+        "operation": "post",
+        "channel": "#cs-team",
+        "text": "={{ '🔍 *KNOWLEDGE GAP* — ' + ($json.raw_persona_tag || 'unknown') + ' | Theme: ' + ($json.theme || 'other') + '\\nCustomer: ' + $json.customer_name + ' (' + $json.customer_email + ')\\nQuestion: ' + ($json.gap_summary || $json.intent_summary || 'N/A') + '\\nMarketing signal: ' + ($json.marketing_signal ? 'YES — ' + ($json.marketing_signal_reason || '') : 'No') + '\\n→ Submit answer: https://abelchoy-n8n.duckdns.org/webhook/gap-resolve' }}",
+        "otherOptions": { "mrkdwn": true }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [[{ "node": "Fetch KB Chunks", "type": "main", "index": 0 }]]
+    },
+    "Fetch KB Chunks": {
+      "main": [[{ "node": "Set Email Fields", "type": "main", "index": 0 }]]
+    },
+    "Set Email Fields": {
+      "main": [[{ "node": "Build KB Context", "type": "main", "index": 0 }]]
+    },
+    "Build KB Context": {
+      "main": [[{ "node": "Claude API", "type": "main", "index": 0 }]]
+    },
+    "Claude API": {
+      "main": [[{ "node": "Attach Email Fields", "type": "main", "index": 0 }]]
+    },
+    "Attach Email Fields": {
+      "main": [[{ "node": "Parse Claude Response", "type": "main", "index": 0 }]]
+    },
+    "Parse Claude Response": {
+      "main": [[{ "node": "Route by Type", "type": "main", "index": 0 }]]
+    },
+    "Route by Type": {
+      "main": [
+        [{ "node": "Log Ticket - Order",      "type": "main", "index": 0 }],
+        [{ "node": "Log Ticket - Answerable",  "type": "main", "index": 0 }],
+        [{ "node": "Log Gap to Supabase",      "type": "main", "index": 0 }]
+      ]
+    },
+    "Log Ticket - Order": {
+      "main": [[{ "node": "Slack - Order Alert", "type": "main", "index": 0 }]]
+    },
+    "Log Gap to Supabase": {
+      "main": [[{ "node": "Log Ticket - Gap", "type": "main", "index": 0 }]]
+    },
+    "Log Ticket - Gap": {
+      "main": [[{ "node": "Slack - Gap Alert", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "id": "wf-boldr-001-email",
+  "meta": { "instanceId": "boldr-n8n" },
+  "notes": "Option B — all credentials hardcoded (N8N_BLOCK_ENV_ACCESS_IN_NODE workaround).\nROOT CAUSE: n8n task runner Code nodes cannot use $('NodeName') cross-references — only $input is available.\nFIX: Two Set nodes bridge data across HTTP Request nodes (which replace their input with the response).\n  • Set Email Fields: reads $('Gmail Trigger').first().json, appends customer_name/email/subject/body to each chunk item\n  • Attach Email Fields: reads $('Build KB Context').first().json, appends email fields back after Claude API response replaces them\nCode nodes now only use $input — no cross-node $() references.\nFlow: Gmail Trigger → Fetch KB Chunks → Set Email Fields → Build KB Context → Claude API → Attach Email Fields → Parse Claude Response → Route by Type → [3 branches]\nIMPORTANT: Replace REPLACE_WITH_YOUR_IMAP_CREDENTIAL_ID and REPLACE_WITH_YOUR_SLACK_CREDENTIAL_ID after import."
+}

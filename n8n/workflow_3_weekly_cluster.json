@@ -1,0 +1,233 @@
+{
+  "name": "Boldr — Workflow 3: Weekly Theme Clustering",
+  "nodes": [
+    {
+      "id": "c3d4e5f6-0001-0001-0001-c3d4e5f60001",
+      "name": "Schedule - Monday 8am SGT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 0 * * 1" }]
+        }
+      }
+    },
+    {
+      "id": "c3d4e5f6-0002-0002-0002-c3d4e5f60002",
+      "name": "Fetch Last 7d Gaps",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/knowledge_gaps?select=gap_id,question_summary,theme,persona_tag,marketing_signal,created_at&created_at=gte.' + new Date(Date.now() - 7*24*60*60*1000).toISOString() + '&order=created_at.desc' }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c3d4e5f6-0002b-002b-002b-c3d4e5f6002b",
+      "name": "Collect Gaps",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [710, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const allItems = $input.all();\nconst gapList = allItems.map(item => ({\n  id: item.json.gap_id,\n  question: item.json.question_summary,\n  theme: item.json.theme,\n  persona: item.json.persona_tag,\n  marketing_signal: item.json.marketing_signal\n}));\n\nreturn [{ json: { gaps_json: JSON.stringify(gapList), gaps_count: gapList.length } }];"
+      }
+    },
+    {
+      "id": "c3d4e5f6-0003-0003-0003-c3d4e5f60003",
+      "name": "Fetch Last 7d Tickets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [940, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/tickets?select=ticket_id,question_type,theme,persona_tag,marketing_signal,intent_summary,answerable,created_at&created_at=gte.' + new Date(Date.now() - 7*24*60*60*1000).toISOString() + '&order=created_at.desc' }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c3d4e5f6-0003b-003b-003b-c3d4e5f6003b",
+      "name": "Set Tickets With Gaps",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1170, 300],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "tg1", "name": "gaps_json",  "value": "={{ $('Collect Gaps').first().json.gaps_json }}", "type": "string" },
+            { "id": "tg2", "name": "gaps_count", "value": "={{ $('Collect Gaps').first().json.gaps_count }}", "type": "number" }
+          ]
+        },
+        "options": { "includeOtherFields": true }
+      }
+    },
+    {
+      "id": "c3d4e5f6-0004-0004-0004-c3d4e5f60004",
+      "name": "Merge and Prepare Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1400, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const allItems = $input.all();\n\nconst gapsJson = allItems.length > 0 ? (allItems[0].json.gaps_json || '[]') : '[]';\nconst gapsCount = allItems.length > 0 ? (allItems[0].json.gaps_count || 0) : 0;\nconst gapList = JSON.parse(gapsJson);\n\nconst ticketList = allItems.map(item => ({\n  id: item.json.ticket_id,\n  type: item.json.question_type,\n  theme: item.json.theme,\n  persona: item.json.persona_tag,\n  marketing_signal: item.json.marketing_signal,\n  summary: item.json.intent_summary,\n  answered: item.json.answerable\n}));\n\nconst weekEnding = new Date().toISOString().split('T')[0];\n\nconst combined = {\n  week_ending: weekEnding,\n  total_tickets: ticketList.length,\n  total_gaps: gapsCount,\n  answered_tickets: ticketList.filter(t => t.answered).length,\n  tickets: ticketList,\n  gaps: gapList\n};\n\nreturn [{ json: {\n  data: combined,\n  week_ending: weekEnding,\n  cluster_id: 'WC-' + weekEnding.replace(/-/g, ''),\n  total_tickets: ticketList.length,\n  total_gaps: gapsCount\n} }];"
+      }
+    },
+    {
+      "id": "c3d4e5f6-0005-0005-0005-c3d4e5f60005",
+      "name": "Claude - Theme Clustering",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1630, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key",        "value": "YOUR_ANTHROPIC_API_KEY" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2000, messages: [{ role: 'user', content: 'You are a customer intelligence analyst for Boldr Supply Co., a Singapore titanium watch micro-brand.\\n\\nBelow are the customer questions from the past 7 days. Group them by theme.\\n\\nFor each theme return:\\n- Theme name\\n- Ticket count\\n- Buyer personas represented\\n- Whether it is a marketing signal (true/false)\\n- One-line recommended action\\n\\nAlso flag themes that appeared 3+ times as strong signals.\\n\\nRETURN JSON ONLY — no markdown, no preamble:\\n{\\n  \"week_summary\": \"one sentence\",\\n  \"themes\": [{\"theme\": \"string\", \"count\": 0, \"personas\": [], \"marketing_signal\": false, \"recommended_action\": \"string\"}],\\n  \"top_signals\": [\"string\"],\\n  \"new_gaps_count\": 0,\\n  \"answered_rate_pct\": 0\\n}\\n\\nTICKET DATA:\\n' + JSON.stringify($json.data, null, 2) }] }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "c3d4e5f6-0005b-005b-005b-c3d4e5f6005b",
+      "name": "Set Cluster Meta",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1860, 300],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "cm1", "name": "cluster_id",    "value": "={{ $('Merge and Prepare Data').first().json.cluster_id }}", "type": "string" },
+            { "id": "cm2", "name": "week_ending",   "value": "={{ $('Merge and Prepare Data').first().json.week_ending }}", "type": "string" },
+            { "id": "cm3", "name": "total_tickets", "value": "={{ $('Merge and Prepare Data').first().json.total_tickets }}", "type": "number" },
+            { "id": "cm4", "name": "total_gaps",    "value": "={{ $('Merge and Prepare Data').first().json.total_gaps }}", "type": "number" }
+          ]
+        },
+        "options": { "includeOtherFields": true }
+      }
+    },
+    {
+      "id": "c3d4e5f6-0006-0006-0006-c3d4e5f60006",
+      "name": "Parse Cluster Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2090, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first().json;\nconst rawText = item.content[0].text;\n\nlet clusterData;\ntry {\n  const clean = rawText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  clusterData = JSON.parse(clean);\n} catch (e) {\n  clusterData = {\n    week_summary: 'Parse error — manual review required',\n    themes: [],\n    top_signals: [],\n    new_gaps_count: 0,\n    answered_rate_pct: 0\n  };\n}\n\nreturn [{ json: {\n  cluster_id: item.cluster_id,\n  week_ending: item.week_ending,\n  themes_json: clusterData.themes || [],\n  top_signals: clusterData.top_signals || [],\n  week_summary: clusterData.week_summary || '',\n  new_gaps_count: item.total_gaps || 0,\n  resolved_gaps_count: 0,\n  total_tickets: item.total_tickets || 0,\n  answered_rate_pct: clusterData.answered_rate_pct || 0\n} }];"
+      }
+    },
+    {
+      "id": "c3d4e5f6-0007-0007-0007-c3d4e5f60007",
+      "name": "Insert Theme Cluster",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2320, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/theme_clusters",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ cluster_id: $json.cluster_id, week_ending: $json.week_ending, themes_json: $json.themes_json, top_signals: $json.top_signals, new_gaps_count: $json.new_gaps_count, resolved_gaps_count: $json.resolved_gaps_count }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "c3d4e5f6-0008-0008-0008-c3d4e5f60008",
+      "name": "Slack - Weekly Digest",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [2550, 300],
+      "parameters": {
+        "operation": "post",
+        "channel": "#cs-team",
+        "text": "={{ '📊 *WEEKLY CS INTELLIGENCE DIGEST* — Week ending ' + $json.week_ending + '\\n\\n' + $json.week_summary + '\\n\\n*Stats:* ' + $json.total_tickets + ' tickets | ' + $json.new_gaps_count + ' new gaps | ' + $json.answered_rate_pct + '% answered by AI\\n\\n*Top signals this week:*\\n' + ($json.top_signals || []).map(s => '• ' + s).join('\\n') + '\\n\\n*Themes:*\\n' + ($json.themes_json || []).map(t => '• *' + t.theme + '* (' + t.count + ' tickets) — ' + t.recommended_action).join('\\n') }}",
+        "otherOptions": { "mrkdwn": true }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule - Monday 8am SGT": {
+      "main": [[{ "node": "Fetch Last 7d Gaps", "type": "main", "index": 0 }]]
+    },
+    "Fetch Last 7d Gaps": {
+      "main": [[{ "node": "Collect Gaps", "type": "main", "index": 0 }]]
+    },
+    "Collect Gaps": {
+      "main": [[{ "node": "Fetch Last 7d Tickets", "type": "main", "index": 0 }]]
+    },
+    "Fetch Last 7d Tickets": {
+      "main": [[{ "node": "Set Tickets With Gaps", "type": "main", "index": 0 }]]
+    },
+    "Set Tickets With Gaps": {
+      "main": [[{ "node": "Merge and Prepare Data", "type": "main", "index": 0 }]]
+    },
+    "Merge and Prepare Data": {
+      "main": [[{ "node": "Claude - Theme Clustering", "type": "main", "index": 0 }]]
+    },
+    "Claude - Theme Clustering": {
+      "main": [[{ "node": "Set Cluster Meta", "type": "main", "index": 0 }]]
+    },
+    "Set Cluster Meta": {
+      "main": [[{ "node": "Parse Cluster Response", "type": "main", "index": 0 }]]
+    },
+    "Parse Cluster Response": {
+      "main": [[{ "node": "Insert Theme Cluster", "type": "main", "index": 0 }]]
+    },
+    "Insert Theme Cluster": {
+      "main": [[{ "node": "Slack - Weekly Digest", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "id": "wf-boldr-003-weekly",
+  "meta": { "instanceId": "boldr-n8n" },
+  "notes": "Schedule: Monday 00:00 UTC = 08:00 SGT\nOPTION B: All credentials hardcoded.\nCODE NODE FIX: n8n task runner Code nodes cannot use $('NodeName') — only $input.\nFIX: Three Set/Code nodes bridge data:\n  • Collect Gaps (Code, runOnceForAllItems): aggregates N gap items → 1 item with gaps_json string. Prevents Fetch Tickets from running N times.\n  • Set Tickets With Gaps (Set, includeOtherFields:true): attaches gaps_json to each ticket item from $('Collect Gaps').first().json\n  • Set Cluster Meta (Set, includeOtherFields:true): re-attaches cluster_id/week_ending/totals after Claude API replaces input\nCode nodes now only use $input.first().json or $input.all() — no $() cross-references."
+}

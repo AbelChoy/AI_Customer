@@ -1,0 +1,230 @@
+{
+  "name": "Boldr — Workflow 2: Gap Resolution",
+  "nodes": [
+    {
+      "id": "b2c3d4e5-0001-0001-0001-b2c3d4e50001",
+      "name": "Webhook - Receive Gap Answer",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gap-resolve",
+        "responseMode": "onReceived",
+        "responseData": "firstEntryJson",
+        "options": {}
+      },
+      "webhookId": "gap-resolve-webhook"
+    },
+    {
+      "id": "b2c3d4e5-0002-0002-0002-b2c3d4e50002",
+      "name": "Fetch Gap Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/knowledge_gaps?gap_id=eq.' + $json.body.gap_id + '&select=*' }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2c3d4e5-0002b-002b-002b-b2c3d4e5002b",
+      "name": "Set Gap Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [710, 300],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "sg1", "name": "human_answer", "value": "={{ $('Webhook - Receive Gap Answer').first().json.body.human_answer }}", "type": "string" },
+            { "id": "sg2", "name": "cs_name",      "value": "={{ $('Webhook - Receive Gap Answer').first().json.body.cs_name || 'CS Team' }}", "type": "string" }
+          ]
+        },
+        "options": { "includeOtherFields": true }
+      }
+    },
+    {
+      "id": "b2c3d4e5-0003-0003-0003-b2c3d4e50003",
+      "name": "Prepare Gap Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [940, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first().json;\n\nif (!item.gap_id) {\n  throw new Error('Gap record not found — gap_id missing from Supabase response');\n}\n\nreturn [{\n  json: {\n    gap_id: item.gap_id,\n    human_answer: item.human_answer,\n    cs_name: item.cs_name || 'CS Team',\n    question_summary: item.question_summary || 'Unknown question',\n    theme: item.theme || 'other',\n    persona_tag: item.persona_tag || null,\n    ticket_id: item.ticket_id || null\n  }\n}];"
+      }
+    },
+    {
+      "id": "b2c3d4e5-0004-0004-0004-b2c3d4e50004",
+      "name": "Claude - Draft KB Entry",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1170, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key",        "value": "YOUR_ANTHROPIC_API_KEY" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: 'You are drafting a Knowledge Base entry for Boldr Supply Co., a premium Singapore titanium watch brand.\\n\\nA customer asked: ' + $json.question_summary + '\\nThe CS team verified answer: ' + $json.human_answer + '\\n\\nDraft a concise FAQ entry in this exact format:\\nQ: [rephrase the customer question clearly]\\nA: [the verified answer, in Boldr brand voice — friendly, direct, factual]\\n\\nReturn ONLY the Q&A entry. No preamble, no explanation.' }] }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "b2c3d4e5-0004b-004b-004b-b2c3d4e5004b",
+      "name": "Set KB Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1400, 300],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "kc1", "name": "gap_id",          "value": "={{ $('Prepare Gap Context').first().json.gap_id }}", "type": "string" },
+            { "id": "kc2", "name": "ticket_id",        "value": "={{ $('Prepare Gap Context').first().json.ticket_id }}", "type": "string" },
+            { "id": "kc3", "name": "human_answer",     "value": "={{ $('Prepare Gap Context').first().json.human_answer }}", "type": "string" },
+            { "id": "kc4", "name": "cs_name",          "value": "={{ $('Prepare Gap Context').first().json.cs_name }}", "type": "string" },
+            { "id": "kc5", "name": "question_summary", "value": "={{ $('Prepare Gap Context').first().json.question_summary }}", "type": "string" },
+            { "id": "kc6", "name": "theme",            "value": "={{ $('Prepare Gap Context').first().json.theme }}", "type": "string" },
+            { "id": "kc7", "name": "persona_tag",      "value": "={{ $('Prepare Gap Context').first().json.persona_tag }}", "type": "string" }
+          ]
+        },
+        "options": { "includeOtherFields": true }
+      }
+    },
+    {
+      "id": "b2c3d4e5-0005-0005-0005-b2c3d4e50005",
+      "name": "Parse KB Draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1630, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first().json;\nconst kbDraft = item.content[0].text.trim();\nconst chunkId = 'KB-GAP-' + item.gap_id;\n\nreturn [{\n  json: {\n    gap_id: item.gap_id,\n    ticket_id: item.ticket_id,\n    human_answer: item.human_answer,\n    cs_name: item.cs_name,\n    question_summary: item.question_summary,\n    theme: item.theme,\n    persona_tag: item.persona_tag,\n    kb_draft_text: kbDraft,\n    kb_chunk_id: chunkId,\n    approved_at: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "b2c3d4e5-0006-0006-0006-b2c3d4e50006",
+      "name": "Update Gap Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1860, 300],
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/knowledge_gaps?gap_id=eq.' + $json.gap_id }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ human_answer: $json.human_answer, kb_draft_text: $json.kb_draft_text, kb_draft_status: 'approved', approved_by: $json.cs_name, approved_at: $json.approved_at, kb_chunk_id: $json.kb_chunk_id, resolved_at: $json.approved_at }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "b2c3d4e5-0007-0007-0007-b2c3d4e50007",
+      "name": "Insert KB Chunk",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2090, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://hmnlrrcuyzrokikpdjyt.supabase.co/rest/v1/kb_chunks",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_KEY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chunk_id: $json.kb_chunk_id, source: 'gap_resolution', category: $json.theme || 'other', content: $json.kb_draft_text, priority_rank: 2, approved_by: $json.cs_name, approved_at: $json.approved_at }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "b2c3d4e5-0008-0008-0008-b2c3d4e50008",
+      "name": "Slack - KB Entry Live",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [2320, 300],
+      "parameters": {
+        "operation": "post",
+        "channel": "#cs-team",
+        "text": "={{ '✅ *KB ENTRY LIVE* — Gap resolved by ' + $json.cs_name + '\\n\\n' + $json.kb_draft_text + '\\n\\nChunk ID: ' + $json.kb_chunk_id + ' | Theme: ' + $json.theme + '\\nThis answer is now live and will be used automatically for future similar questions.' }}",
+        "otherOptions": { "mrkdwn": true }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Receive Gap Answer": {
+      "main": [[{ "node": "Fetch Gap Record", "type": "main", "index": 0 }]]
+    },
+    "Fetch Gap Record": {
+      "main": [[{ "node": "Set Gap Context", "type": "main", "index": 0 }]]
+    },
+    "Set Gap Context": {
+      "main": [[{ "node": "Prepare Gap Context", "type": "main", "index": 0 }]]
+    },
+    "Prepare Gap Context": {
+      "main": [[{ "node": "Claude - Draft KB Entry", "type": "main", "index": 0 }]]
+    },
+    "Claude - Draft KB Entry": {
+      "main": [[{ "node": "Set KB Context", "type": "main", "index": 0 }]]
+    },
+    "Set KB Context": {
+      "main": [[{ "node": "Parse KB Draft", "type": "main", "index": 0 }]]
+    },
+    "Parse KB Draft": {
+      "main": [[{ "node": "Update Gap Record", "type": "main", "index": 0 }]]
+    },
+    "Update Gap Record": {
+      "main": [[{ "node": "Insert KB Chunk", "type": "main", "index": 0 }]]
+    },
+    "Insert KB Chunk": {
+      "main": [[{ "node": "Slack - KB Entry Live", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "id": "wf-boldr-002-gap",
+  "meta": { "instanceId": "boldr-n8n" },
+  "notes": "Webhook: POST https://abelchoy-n8n.duckdns.org/webhook/gap-resolve\nPayload: { gap_id: 'GAP-xxx', human_answer: 'The answer...', cs_name: 'Abel' }\nOPTION B: All credentials hardcoded.\nCODE NODE FIX: n8n task runner Code nodes cannot use $('NodeName') cross-references — only $input.\nFIX: Two Set nodes bridge data across HTTP Request nodes:\n  • Set Gap Context: reads $('Webhook').first().json.body.* in Set expression (OK), appends human_answer + cs_name to gap record\n  • Set KB Context: reads $('Prepare Gap Context').first().json.* in Set expression (OK), re-attaches gap context after Claude API response replaces it\nCode nodes now only use $input.first().json — no $() cross-references."
+}
